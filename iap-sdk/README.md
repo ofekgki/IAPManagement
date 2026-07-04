@@ -115,6 +115,23 @@ PurchaseSdk.init(
 passing an `Activity` does not leak it. **Do not hardcode a real API key** — the `apiKey` above is a
 placeholder; real validation against a backend is a `TODO`.
 
+### Zero-config auto-init (optional)
+
+Like Firebase's `FirebaseInitProvider`, the SDK ships a `PurchaseSdkInitProvider` (a `ContentProvider`)
+that runs **before `Application.onCreate`** and auto-initializes when the host app declares meta-data —
+no init code required:
+
+```xml
+<!-- host app AndroidManifest.xml, inside <application> -->
+<meta-data android:name="com.example.iapsdk.API_KEY"      android:value="demo_api_key_123" />
+<meta-data android:name="com.example.iapsdk.BASE_URL"     android:value="http://10.0.2.2:8080/api/v1/sdk" />
+<meta-data android:name="com.example.iapsdk.BILLING_MODE" android:value="MOCK" />
+```
+
+If no meta-data is present it is a **no-op** (you init manually as above). The user id is usually
+unknown at process start, so set it later with `PurchaseSdk.init(..., userId = currentUser.id)` (it
+replaces the session) once the user signs in.
+
 ---
 
 ## Billing modes

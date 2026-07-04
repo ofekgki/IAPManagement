@@ -8,6 +8,7 @@ Keep the exact file names below so the README embeds resolve:
 | `portal-dashboard.png` | Portal → app Dashboard (KPIs + recent purchases) |
 | `portal-revenue.png` | Portal → Revenue (over-time chart + by-payment-method pie) |
 | `portal-purchases.png` | Portal → Purchases (paginated table) |
+| `portal-apikeys.png` | Portal → API Keys (create / revoke / rotate) — used by `docs/site/index.html` |
 | `demo-home.png` | Demo app → Home (gradient hero + section cards) |
 | `demo-store.png` | Demo app → Store (product cards) |
 | `demo-popup.png` | SDK purchase popup (product artwork hero) |

@@ -2,4 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- The SDK talks to the platform backend over HTTP, so consumer apps inherit this permission. -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+        <!--
+          Zero-config auto-initialization (the Firebase FirebaseInitProvider pattern). Android creates
+          this provider before Application.onCreate; it auto-inits the SDK when the host app declares
+          the API-key <meta-data>, and is a no-op otherwise. The authority is app-scoped via
+          ${applicationId} so it never collides across apps.
+        -->
+        <provider
+            android:name="com.example.iapsdk.startup.PurchaseSdkInitProvider"
+            android:authorities="${applicationId}.purchasesdkinitprovider"
+            android:exported="false"
+            android:initOrder="99" />
+    </application>
 </manifest>
