@@ -140,94 +140,106 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 
 ```mermaid
 erDiagram
-    DEVELOPER_USER   ||--o{ DEVELOPER_APP      : "owns"
-    DEVELOPER_APP    ||--o{ API_KEY            : "issues"
-    DEVELOPER_APP    ||--o{ PURCHASE_ITEM      : "catalogs"
-    DEVELOPER_APP    ||--o{ PURCHASE           : "records"
-    DEVELOPER_APP    ||--o{ ENTITLEMENT        : "grants"
-    DEVELOPER_APP    ||--o{ ANALYTICS_EVENT    : "logs"
-    DEVELOPER_APP    ||--o{ IDEMPOTENCY_RECORD : "dedupes"
-    PURCHASE_ITEM    ||--o{ PURCHASE           : "is sold as"
-    PURCHASE_ITEM    ||--o{ ENTITLEMENT        : "defines access for"
-    PURCHASE         ||--o{ ENTITLEMENT        : "grants"
-    PURCHASE         ||--o{ ANALYTICS_EVENT    : "emits"
+    DEVELOPER_USER   ||--o{ DEVELOPER_APP      : owns
+    DEVELOPER_APP    ||--o{ API_KEY            : issues
+    DEVELOPER_APP    ||--o{ PURCHASE_ITEM      : catalogs
+    DEVELOPER_APP    ||--o{ PURCHASE           : records
+    DEVELOPER_APP    ||--o{ ENTITLEMENT        : grants
+    DEVELOPER_APP    ||--o{ ANALYTICS_EVENT    : logs
+    DEVELOPER_APP    ||--o{ IDEMPOTENCY_RECORD : dedupes
+    PURCHASE_ITEM    ||--o{ PURCHASE           : sold_as
+    PURCHASE_ITEM    ||--o{ ENTITLEMENT        : defines
+    PURCHASE         ||--o{ ENTITLEMENT        : grants
+    PURCHASE         ||--o{ ANALYTICS_EVENT    : emits
 
     DEVELOPER_USER {
-        string id PK
-        string email UK
-        string password_hash
-        string display_name
-        enum   role "OWNER | ADMIN | VIEWER"
-        instant created_at
+        string   id            PK "User ID"
+        string   email         UK "Email address"
+        string   password_hash    "Password hash"
+        string   display_name     "Display name"
+        enum     role             "Role"
+        datetime created_at        "Created date"
     }
     DEVELOPER_APP {
-        string id PK
-        string owner_user_id FK
-        string app_name
-        string package_name
-        enum   billing_mode_default "MOCK | GOOGLE_PLAY"
-        boolean is_active
+        string   id                  PK "App ID"
+        string   owner_user_id       FK "Owner user"
+        string   app_name               "App name"
+        string   package_name           "Package name"
+        enum     billing_mode_default   "Default billing mode"
+        boolean  is_active              "Active flag"
     }
     API_KEY {
-        string id PK
-        string developer_app_id FK
-        string name
-        string key_prefix
-        string key_hash UK "SHA-256(pepper + raw)"
-        enum   status "ACTIVE | REVOKED"
+        string   id               PK "Key ID"
+        string   developer_app_id FK "App"
+        string   name                "Key name"
+        string   key_prefix          "Key prefix"
+        string   key_hash         UK "Hashed key"
+        enum     status              "Status"
     }
     PURCHASE_ITEM {
-        string id PK
-        string developer_app_id FK
-        string item_id "app-scoped, unique"
-        string name
-        enum   type "LIFETIME | CONSUMABLE | SUBSCRIPTION"
-        long   price_amount_minor
-        string currency
-        string entitlement_id "granted on purchase"
-        boolean is_active
+        string   id                 PK "Item row ID"
+        string   developer_app_id   FK "App"
+        string   item_id               "Item ID"
+        string   name                  "Product name"
+        enum     type                  "Product type"
+        long     price_amount_minor    "Price in minor units"
+        string   currency              "Currency"
+        string   entitlement_id        "Entitlement granted"
+        boolean  is_active             "Active flag"
     }
     PURCHASE {
-        string id PK
-        string developer_app_id FK
-        string user_id
-        string item_id FK
-        enum   status "CREATED|PENDING|SUCCESS|FAILED|CANCELLED|REQUIRES_VERIFICATION|RESTORED"
-        enum   payment_method "APPLE_PAY | GOOGLE_PLAY | PAYPAL | CREDIT_CARD"
-        enum   billing_mode "MOCK | GOOGLE_PLAY"
-        long   price_amount_minor "price snapshot"
-        string price_currency
-        string idempotency_key "unique per attempt"
-        instant completed_at
+        string   id                 PK "Purchase ID"
+        string   developer_app_id   FK "App"
+        string   user_id               "End user"
+        string   item_id            FK "Item"
+        enum     status                "Status"
+        enum     payment_method        "Payment method"
+        enum     billing_mode          "Billing mode"
+        long     price_amount_minor    "Price snapshot"
+        string   price_currency        "Currency snapshot"
+        string   idempotency_key       "Idempotency key"
+        datetime completed_at          "Completed date"
     }
     ENTITLEMENT {
-        string id PK
-        string developer_app_id FK
-        string user_id
-        string entitlement_id
-        string source_item_id FK
-        string purchase_id FK
-        enum   status "ACTIVE | EXPIRED | REVOKED"
-        instant expires_at "null = lifetime"
+        string   id               PK "Entitlement row ID"
+        string   developer_app_id FK "App"
+        string   user_id             "End user"
+        string   entitlement_id      "Entitlement ID"
+        string   source_item_id   FK "Source item"
+        string   purchase_id      FK "Source purchase"
+        enum     status              "Status"
+        datetime expires_at          "Expiry or null"
     }
     ANALYTICS_EVENT {
-        string id PK
-        string developer_app_id FK
-        string user_id
-        string event_name
-        string item_id
-        string purchase_id FK
-        string metadata_json
-        instant created_at
+        string   id               PK "Event ID"
+        string   developer_app_id FK "App"
+        string   user_id             "End user"
+        string   event_name          "Event name"
+        string   item_id             "Item"
+        string   purchase_id      FK "Purchase"
+        string   metadata_json       "Metadata JSON"
+        datetime created_at          "Created date"
     }
     IDEMPOTENCY_RECORD {
-        string id PK
-        string developer_app_id FK
-        string idempotency_key UK
-        string purchase_id FK
-        string response_json
+        string   id               PK "Record ID"
+        string   developer_app_id FK "App"
+        string   idempotency_key  UK "Idempotency key"
+        string   purchase_id      FK "Purchase"
+        string   response_json       "Stored response"
     }
 ```
+
+**Enum values**
+
+| Field | Values |
+|---|---|
+| `developer_user.role` | `OWNER` · `ADMIN` · `VIEWER` (roles are currently un-enforced — every user has full access) |
+| `*.billing_mode` | `MOCK` · `GOOGLE_PLAY` |
+| `api_key.status` | `ACTIVE` · `REVOKED` |
+| `purchase_item.type` | `LIFETIME` · `CONSUMABLE` · `SUBSCRIPTION` |
+| `purchase.status` | `CREATED` · `PENDING` · `SUCCESS` · `FAILED` · `CANCELLED` · `REQUIRES_VERIFICATION` · `RESTORED` |
+| `purchase.payment_method` | `APPLE_PAY` · `GOOGLE_PLAY` · `PAYPAL` · `CREDIT_CARD` |
+| `entitlement.status` | `ACTIVE` · `EXPIRED` · `REVOKED` |
 
 > Relationships are enforced in the service layer via app-scoped string IDs (`item_id`,
 > `entitlement_id`, `purchase_id`) rather than DB foreign keys, keeping each app's data self-contained.
