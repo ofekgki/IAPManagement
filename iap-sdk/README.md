@@ -5,10 +5,12 @@ an app a clean public API for fetching items, showing a purchase popup, making p
 checking entitlements — with all networking, storage, analytics, and UI hidden behind `internal`
 implementation classes.
 
-> **Learning project / scope.** This module is the **client SDK library layer only**. There is *no*
-> real backend yet: the network layer (`ApiClient`) is a self-contained mock that serves a sample
-> catalog and records purchases in memory. Every seam where a real server call belongs is marked
-> with a `TODO(backend)` comment.
+> **Scope.** This module is the **client SDK library layer**. Its network layer (`ApiClient`) is a
+> **real HTTP client** (JDK `HttpURLConnection` + Gson, no extra dependency) that calls the platform
+> backend's SDK API under `/api/v1/sdk/**` with the `X-SDK-API-Key` header. In **MOCK** billing mode
+> the *payment* is simulated server-side, but the purchase/entitlement/analytics rows are real. The
+> backend, developer portal, and demo app live in the same monorepo. Only the **Google Play** billing
+> path is still a scaffold (fails safe until configured).
 
 ---
 
@@ -40,18 +42,19 @@ implementation classes.
   **`PurchaseListener`** callback interface.
 - A **custom purchase popup** (bottom-sheet UI), shown via `PurchaseSdk.showPurchasePopup`.
 - **Internal managers**: purchase flow, entitlements, local cache, analytics, error mapping, and a
-  mock API client — all `internal`, none reachable by the host app.
+  real HTTP API client — all `internal`, none reachable by the host app.
 - **Coroutines-based** async API (`suspend` functions).
 - This **README** documenting every public and internal piece.
 
-## What it does NOT include
+## What it does NOT include (within this module)
 
-- ❌ Backend server, database, or developer portal / admin dashboard.
-- ❌ A real payment provider or **Google Play Billing** integration.
-- ❌ Server authentication, product-creation UI, or an analytics dashboard.
-- ❌ A full demo app screen (a minimal demo lives in the sibling `:app` module).
+- The backend server, database, or developer portal — those are **separate modules** in the monorepo
+  (`backend/`, `portal-web/`). This module is the client library the SDK API talks to.
+- A real payment provider or **Google Play Billing** integration (the `GooglePlayBillingProvider`
+  is a scaffold that fails safe with `GooglePlayNotConfigured`).
+- Its own analytics dashboard (events are sent to the backend, which the portal charts).
 
-The SDK is structured so each of these can be added later **behind the existing internal seams**
+The SDK is structured so Google Play billing can be added later **behind the existing internal seams**
 without changing the public API.
 
 ---
@@ -176,11 +179,16 @@ Loads the item and presents the SDK's purchase popup over `activity`. Outcomes a
 no popup is shown. This is the recommended, batteries-included flow.
 
 ### `makePurchase(itemId, paymentMethodId = null): PurchaseResult` *(suspend)*
-Runs the purchase flow **without** a popup — for apps with their own UI. Returns a `PurchaseResult`
-on success; throws `PurchaseException` on any failure.
+Runs the purchase flow **without** a popup — for apps with their own UI. `paymentMethodId` carries the
+chosen payment method (`APPLE_PAY` / `GOOGLE_PLAY` / `PAYPAL` / `CREDIT_CARD`), recorded by the backend
+for the revenue-by-payment-method breakdown. Returns a `PurchaseResult`; throws `PurchaseException` on
+any failure.
 
-### `restorePurchases(): List<PurchaseResult>` *(suspend)*
-Restores the user's prior purchases and refreshes the local entitlement cache.
+### `restorePurchases(itemId = null): List<PurchaseResult>` *(suspend)*
+**Return / refund** flow: releases the user's owned purchases (revokes the entitlement so the item is
+buyable again) and refreshes the local entitlement cache. Pass an `itemId` to return a single item, or
+`null` to return everything currently owned. The backend subtracts the returned item's price from
+revenue.
 
 ### `hasEntitlement(itemId): Boolean` *(suspend)*
 Whether the current user has active access to `itemId`. Checks the cache first, then refreshes from
@@ -207,8 +215,9 @@ to uninitialized. The cached item catalog is preserved. Safe to call when not in
 | **`SdkEnvironment`** | `SANDBOX` / `PRODUCTION`. Chooses the (mock) base URL. |
 | **`PurchaseItem`** | A purchasable product: `id`, `name`, `description`, `price`, `currency`, `type`. |
 | **`PurchaseItemType`** | `LIFETIME` / `CONSUMABLE` / `SUBSCRIPTION`. |
-| **`PurchaseResult`** | Outcome of a purchase: `purchaseId`, `itemId`, `userId`, `status`, `purchasedAt`, `message?`. |
-| **`PurchaseStatus`** | `SUCCESS` / `PENDING` / `FAILED` / `CANCELLED`. |
+| **`PaymentMethod`** | `APPLE_PAY` / `GOOGLE_PLAY` (shown as "Google Pay") / `PAYPAL` / `CREDIT_CARD`. Chosen in the popup; each carries a display name + backend `apiValue`. |
+| **`PurchaseResult`** | Outcome of a purchase: `purchaseId`, `itemId`, `userId`, `status`, `purchasedAt`, `message?`, `itemName?`, `entitlementStatus?`. |
+| **`PurchaseStatus`** | `SUCCESS` / `PENDING` / `FAILED` / `CANCELLED` / `RESTORED`. |
 | **`PurchaseSdkError`** | Sealed set of client-facing errors (each with a stable `code` + `message`). See [Error handling](#error-handling). |
 | **`UserEntitlement`** | Access record: `itemId`, `userId`, `type`, `isActive`, `grantedAt`, `expiresAt?`. |
 | **`PurchaseListener`** | Popup callback: `onPurchaseSuccess` / `onPurchaseCancelled` / `onPurchaseFailed(PurchaseSdkError)`. |
@@ -231,7 +240,7 @@ PurchaseSdk (public facade)
         ▼
    SdkRuntime ──────────────────────────────────────────────┐  (wires deps, owns a coroutine scope)
         │                                                    │
-        ├── ApiClient            mock network seam (catalog, purchases, entitlements, analytics)
+        ├── ApiClient            real HTTP client (catalog, purchases, entitlements, analytics)
         ├── LocalStorage         SharedPreferences + Gson cache
         ├── AnalyticsTracker     fire-and-forget events (tagged with billingMode) → ApiClient
         ├── EntitlementManager   cache-first access checks → ApiClient + LocalStorage
@@ -252,16 +261,20 @@ Supporting: ErrorMapper, PurchaseValidator, DTO↔model Mappers, id helpers.
     `PurchaseSdkError.GooglePlayNotConfigured` and is annotated with the exact `TODO`s needed
     (BillingClient setup, ProductDetails, `launchBillingFlow`, token verification, acknowledge/consume,
     response-code mapping, `setObfuscatedAccountId`).
-- **`ApiClient`** — the single seam to "the network". Suspend functions: `fetchItem`, `fetchItems`,
-  `createPurchase`, `confirmPurchase`, `cancelPurchase`, `restorePurchases`, `fetchEntitlements`,
-  `sendAnalyticsEvent`. Currently mocked with a sample catalog, an in-memory purchase store, and
-  simulated latency. Honors the request idempotency key. Marked with `TODO(backend)`.
+- **`ApiClient`** — the single seam to the network: a **real HTTP client** (JDK `HttpURLConnection` +
+  Gson). Suspend functions: `fetchItem`, `fetchItems`, `createPurchase`, `confirmPurchase`,
+  `cancelPurchase`, `restorePurchases`, `fetchEntitlements`, `sendAnalyticsEvent`. Sends the
+  `X-SDK-API-Key` header, parses the `{ success, data, error }` envelope, maps backend error codes to
+  `PurchaseSdkError`, and bridges the backend's two-step `start`→`confirm` purchase. Sends a
+  **unique-per-attempt** `Idempotency-Key`. *(TODO: swap for Retrofit/OkHttp; add a real cancel endpoint.)*
 - **`PurchaseManager`** — **selects the provider from the active `BillingMode`** and delegates
   `getItem` / `makePurchase` / `restorePurchases` to it, wrapping each with start/success/failure
   analytics and `ErrorMapper` normalization.
 - **`PurchasePopupView`** — the self-contained bottom-sheet UI (`FrameLayout`). `bindItem` /
   `setLoadingState` / `showError` / `clearError`. Themes itself via a Material `ContextThemeWrapper`,
-  so the host needs no Material theme.
+  so the host needs no Material theme. Renders a **per-product artwork tile** (a generated gradient +
+  monogram, colored by product type) and a **tappable payment-method row** that opens a chooser
+  (`selectedPaymentMethod`); the choice is passed to `makePurchase`.
 - **`PurchasePopupController`** — builds, shows, and dismisses the popup in a `Dialog`; wires Confirm
   to `PurchaseManager` and routes results to the `PurchaseListener`. `showPopup` / `dismissPopup` /
   `isPopupShowing`.
@@ -398,17 +411,18 @@ try {
 
 ---
 
-## Notes for future backend integration
+## Notes on backend integration
 
-- All network calls already funnel through **`ApiClient`**. Replace each mocked function body with a
-  real HTTP call (Retrofit/Ktor) to `baseUrl`, sending the `apiKey` as an auth header. The DTOs
+- All network calls funnel through **`ApiClient`**, which already makes real HTTP calls to `baseUrl`
+  (e.g. `http://10.0.2.2:8080/api/v1/sdk`) with the `X-SDK-API-Key` header. The DTOs
   (`PurchaseItemDto`, `PurchaseDto`, `UserEntitlementDto`, `AnalyticsEventDto`) and request bodies
-  (`CreatePurchaseRequest`, `AnalyticsEventRequest`) are already the shapes such an API would use.
-- The `CreatePurchaseRequest.idempotencyKey` is ready to send as an `Idempotency-Key` header so
-  retried / double-tapped Confirms collapse into a single server-side purchase.
+  (`CreatePurchaseRequest`, `AnalyticsEventRequest`) match the backend's shapes.
+- `CreatePurchaseRequest.idempotencyKey` is sent as an `Idempotency-Key` header (unique per attempt)
+  so a retried Confirm collapses into a single server-side purchase.
 - DTO↔model mapping lives in `api/Mappers.kt`; enum parsing is lenient so a new server enum value
   won't crash older clients.
-- No other layer needs to change — managers depend on `ApiClient`, not on transport details.
+- Transport is the only thing to swap for production (Retrofit/OkHttp) — managers depend on
+  `ApiClient`, not on transport details.
 
 ## Notes for future Google Play Billing integration
 
@@ -429,9 +443,9 @@ try {
 
 - **`GOOGLE_PLAY` mode is a scaffold** — it intentionally fails with `GooglePlayNotConfigured` until
   the `GooglePlayBillingProvider` TODOs are implemented. Only `MOCK` mode is functional today.
-- **No real backend or payments** — `ApiClient` is an in-memory mock; purchases and entitlements do
-  not persist server-side and reset when the process is killed (only the local caches persist).
-- The popup's payment method is a static placeholder; there is no payment-method selection yet.
-- Analytics events are logged/forwarded to the mock client only; there is no real ingestion.
+- **The payment is simulated** in MOCK mode (the backend marks the purchase `SUCCESS` without a real
+  charge). The HTTP calls, DB writes, entitlement logic, and analytics are all real.
+- Networking is hand-rolled (`HttpURLConnection` + Gson) to avoid a dependency; a production SDK would
+  use Retrofit/OkHttp (isolated in `ApiClient`, so swapping it is localized).
 - Local cache uses `SharedPreferences` + Gson (fine for v1; consider DataStore/Room later).
 - Single active user/session at a time (switching users = call `init` again or `logout` first).

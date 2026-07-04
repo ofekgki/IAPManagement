@@ -20,9 +20,11 @@ would. It shows the full lifecycle:
 2. **Loading items from the backend** — Store screen → `PurchaseSdk.getItems()`.
 3. **Showing products** — name, description, type, price, currency, and an **Owned** badge.
 4. **Opening the SDK purchase popup** — Buy/Unlock → `PurchaseSdk.showPurchasePopup(...)`.
-5. **Confirming a purchase** — popup Confirm → `makePurchase` → backend `start` + `confirm`.
+5. **Confirming a purchase** — popup: pick a **payment method** (Apple Pay / Google Pay / PayPal /
+   Credit Card), Confirm → `makePurchase(itemId, paymentMethod)` → backend `start` + `confirm`.
 6. **Cancelling a purchase** — popup Cancel/back → cancel analytics, popup closes.
-7. **Restoring purchases** — Restore screen → `PurchaseSdk.restorePurchases()`.
+7. **Returning purchases** — Restore screen → `PurchaseSdk.restorePurchases(itemId?)` (a **return/refund**:
+   releases the item, drops its price from portal revenue; all items or one).
 8. **Checking entitlement** — Premium screen → `PurchaseSdk.hasEntitlement(itemId)`.
 9. **Listing entitlements** — Entitlements screen → `PurchaseSdk.listEntitlements()`.
 10. **Sending analytics** — automatic across the SDK, plus explicit `item_viewed` /
@@ -34,9 +36,9 @@ would. It shows the full lifecycle:
 | Screen | SDK calls used | Notes |
 |---|---|---|
 | **Home** | — | Explains the demo; cards navigate to each flow; shows the demo user. |
-| **Store** | `getItems()`, popup `showPurchasePopup()`, `trackEvent("item_viewed")` | Lists the catalog with prices/types and Owned badges. |
+| **Store** | `getItems()`, popup `showPurchasePopup()`, `trackEvent("item_viewed")` | Color-coded product cards with per-type badges, price chip, and Buy / Owned state. |
 | **My Entitlements** | `listEntitlements()` | Active entitlements with type / granted / expiry; empty state. |
-| **Restore Purchases** | `restorePurchases()` | Loading → success (list) / error state machine. |
+| **Restore / Return** | `restorePurchases(itemId?)` | Lists owned items with per-item **Return** (refund) buttons; loading → success / error. |
 | **Premium Feature** | `hasEntitlement()`, popup `showPurchasePopup()`, `trackEvent("entitlement_checked")` | Locked vs unlocked; "Unlock Now" opens the popup. |
 
 ---
@@ -207,12 +209,12 @@ cd backend && mvn spring-boot:run
 | # | Action | Expected |
 |---|---|---|
 | 1 | Launch app | Home screen; SDK initialized (Logcat tag `IapApiClient`). |
-| 2 | Home → **View Store Items** | Catalog loads from backend; *Remove Ads* shows **Owned ✓** (seeded for `demo-user-001`). |
-| 3 | Tap **Buy** on an unowned item | SDK popup opens (emits `purchase_popup_shown`). |
+| 2 | Home → **Store** | Catalog loads from backend; *Remove Ads* shows the **Owned** state (seeded for `demo-user-001`). |
+| 3 | Tap **Buy** on an unowned item | SDK popup opens (emits `purchase_popup_shown`); shows product artwork + payment picker. |
 | 4 | Tap **Cancel** | Popup closes; "Purchase cancelled." banner (`purchase_cancel_clicked`). |
-| 5 | Tap **Buy** again → **Confirm** | "Purchase complete"; item flips to **Owned ✓**; a `SUCCESS` purchase row + entitlement appear in the DB/portal. |
-| 6 | Home → **View My Entitlements** | Lists active entitlements (incl. the one just bought). |
-| 7 | Home → **Restore Purchases** → **Restore** | Loading → success list of the user's purchases. |
+| 5 | Tap **Buy** again → pick a payment method → **Confirm** | "Purchase complete"; item flips to **Owned**; a `SUCCESS` purchase row + entitlement appear in the DB/portal. |
+| 6 | Home → **My Entitlements** | Lists active entitlements (incl. the one just bought). |
+| 7 | Home → **Restore / Return** → **Return** an item | The item is released (buyable again) and its price is refunded from portal revenue. |
 | 8 | Home → **Premium Feature** | If owned → **Unlocked**; else **Locked** + **Unlock Now** → popup → buy → unlocks. |
 | 9 | Portal → **Analytics** (refresh) | Event counts/funnel reflect your taps; **Reset & regenerate** restores the rich dataset. |
 

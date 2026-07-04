@@ -59,7 +59,7 @@ controlled by Google Play Billing.
 | | `MOCK` | `GOOGLE_PLAY` |
 |---|---|---|
 | Purpose | Demo / tests / education | Future real billing |
-| Works today | ✅ end-to-end | ⚠️ scaffold only |
+| Works today | yes, end-to-end | scaffold only |
 | Google Play Console | not needed | required (later) |
 | Purchase verification | simulated success | **must** verify token server-side (TODO) |
 | On unconfigured call | n/a | fails with `GOOGLE_PLAY_NOT_CONFIGURED` |
@@ -76,8 +76,13 @@ until `GooglePlayVerificationService` is implemented.
 | `X-SDK-API-Key` | all `/sdk/**` | Identifies the developer app (validated as a SHA-256 hash; raw key never stored). |
 | `X-SDK-Version` | `/sdk/**` | SDK version, for logging/analytics. |
 | `X-Request-Id` | all | Correlation id; echoed back in the response and the envelope. Generated if absent. |
-| `Idempotency-Key` | `/sdk/purchases/confirm` | Makes confirmation safe to retry. |
+| `Idempotency-Key` | `/sdk/purchases/confirm` | Makes confirmation safe to retry (unique per attempt). |
+| `Authorization: Bearer <JWT>` | all `/portal/**` (except register/login) | Developer-portal auth. The backend also serves the **portal API** (`/api/v1/portal/**`) consumed by `portal-web`. |
 | `X-Internal-Admin-Token` | all `/internal/**` | Shared admin token. **Fails closed** if unset. |
+
+> The full portal endpoint list (apps, API keys, items, purchases, entitlements, analytics, users,
+> maintenance) lives in [`../docs/API_ENDPOINTS.md`](../docs/API_ENDPOINTS.md). Roles were flattened —
+> every authenticated portal user has full access.
 
 > The SDK API key ships inside a client app, so it is **not a strong secret** — it identifies, it does
 > not authorize sensitive actions. Future hardening (all marked `TODO` in code): package-name
@@ -94,9 +99,9 @@ until `GooglePlayVerificationService` is implemented.
 | POST | `/api/v1/sdk/init` | Validate app, return feature flags, record `sdk_initialized`. |
 | GET  | `/api/v1/sdk/items` | List active items. |
 | GET  | `/api/v1/sdk/items/{itemId}` | Get one item (`ITEM_NOT_FOUND` if missing/inactive). |
-| POST | `/api/v1/sdk/purchases/start` | Create a `CREATED` purchase. |
+| POST | `/api/v1/sdk/purchases/start` | Create a `CREATED` purchase (snapshots price + `paymentMethod`). |
 | POST | `/api/v1/sdk/purchases/confirm` | Complete a purchase (idempotent). |
-| POST | `/api/v1/sdk/purchases/restore` | Restore prior purchases + active entitlements. |
+| POST | `/api/v1/sdk/purchases/restore` | **Return/refund**: releases owned items (revokes entitlement, drops revenue). Optional `itemId` = per-item return. |
 | GET  | `/api/v1/sdk/entitlements/check` | `hasEntitlement` by `entitlementId` or `itemId`. |
 | GET  | `/api/v1/sdk/entitlements` | `listEntitlements` for a user. |
 | POST | `/api/v1/sdk/analytics/events` | Store a custom analytics event. |
@@ -235,13 +240,18 @@ and demo seed data. Configure the internal admin token via `INTERNAL_ADMIN_TOKEN
 
 ## 10. Seed data (dev only)
 
-On startup with `app.seed.enabled=true` (set only in the `dev` profile), `SeedDataLoader` creates:
+On startup with `app.seed.enabled=true` (dev + docker profiles), `SeedDataLoader` creates:
 
-- **Developer app:** `Demo App`, package `com.example.demo`, API key `demo_api_key_123`, default mode `MOCK`.
-- **Items:** `remove_ads` ($1.99, NON_CONSUMABLE → `ent_remove_ads`), `premium_lifetime`
-  ($4.99, NON_CONSUMABLE → `ent_premium`), `coins_100` ($1.99, CONSUMABLE, no entitlement),
-  `monthly_subscription_demo` ($4.99, SUBSCRIPTION → `ent_monthly_demo`).
+- **Portal user:** `demo@example.com` / `password123` (owner of the demo app).
+- **Developer app:** `app_demo` ("Demo Game"), API key `demo_api_key_123`, default mode `MOCK`.
+- **Catalog:** a **~21-item** catalog — lifetime unlocks (e.g. `remove_ads`, `premium_lifetime`),
+  monthly/yearly subscriptions (e.g. `pro_monthly`), and consumable coin packs (`coins_100/500/…`).
+  All prices are **USD**, stored in **minor units**.
+- **History** (`app.seed.sample-data=true`): a realistic, deterministic stream of purchases,
+  entitlements, and analytics from `app.seed.start-date` (default `2026-01-01`) to
+  `app.seed.end-date` (blank ⇒ today). Each purchase gets a **price snapshot** and a random
+  **payment method** (Apple Pay / Google Pay / PayPal / Credit Card) for the portal's breakdowns.
 
-Prices are **demo values only**. Seeding never runs in production (the property is unset there).
-TODO: replace seed data with developer-portal item creation later.
+Seeding is idempotent, auto-reseeds a stale/smaller catalog, and **never runs in production**.
+See [`../docs/DEMO_GUIDE.md`](../docs/DEMO_GUIDE.md).
 ```

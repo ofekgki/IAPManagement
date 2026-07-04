@@ -15,8 +15,12 @@ export type PurchaseStatus =
   | "SUCCESS"
   | "FAILED"
   | "CANCELLED"
-  | "REQUIRES_VERIFICATION";
+  | "REQUIRES_VERIFICATION"
+  | "RESTORED"; // a returned/refunded purchase
 export type EntitlementStatus = "ACTIVE" | "EXPIRED" | "REVOKED";
+/** How the user paid — the portal's revenue-breakdown dimension (GOOGLE_PLAY shows as "Google Pay"). */
+export type PaymentMethod = "APPLE_PAY" | "GOOGLE_PLAY" | "PAYPAL" | "CREDIT_CARD";
+/** Retained on users but no longer enforced — every portal user has full access. */
 export type UserRole = "OWNER" | "ADMIN" | "VIEWER";
 export type ApiKeyStatus = "ACTIVE" | "REVOKED";
 

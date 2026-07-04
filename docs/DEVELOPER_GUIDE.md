@@ -22,6 +22,43 @@ path, which is still scaffolded and fails safely until configured — every such
 
 ---
 
+## Current state (recent changes)
+
+This guide is a deep dive; the platform has evolved since the section bodies below were first written.
+Where a section conflicts with this list, **this list is authoritative** (and the code is the final
+word). For the exact endpoints see [`API_ENDPOINTS.md`](API_ENDPOINTS.md); for queries/indexes see
+[`DATABASE_QUERIES.md`](DATABASE_QUERIES.md).
+
+- **Payment methods replaced the billing-mode analytics dimension.** A new `PaymentMethod`
+  (`APPLE_PAY` / `GOOGLE_PLAY` (shown as *Google Pay*) / `PAYPAL` / `CREDIT_CARD`) is stored on each
+  `purchase` and chosen in the SDK popup's payment row. Revenue is now broken down **by payment
+  method** (not MOCK/GOOGLE_PLAY). `BillingMode` still exists for the fulfilment path.
+- **Restore = return / refund.** `restorePurchases(itemId?)` releases owned items: it writes a
+  `RESTORED` purchase, **revokes** the entitlement (item becomes buyable again), and **subtracts** the
+  item's price from revenue. `PurchaseStatus` gained **`RESTORED`**.
+- **Roles were flattened.** `OWNER`/`ADMIN`/`VIEWER` are no longer enforced — every authenticated
+  portal user has full access (add users, manual grant/revoke). The enum/field remain but are inert.
+- **Price snapshot.** `purchase.priceAmountMinor` + `priceCurrency` are captured at purchase time, so
+  editing an item's price never rewrites historical revenue. All revenue math prefers the snapshot.
+- **Analytics defaults changed.** Default window start is **1 Jan 2026** (`DateRanges.DEFAULT_START`),
+  not "last 365 days". Revenue-over-time is **zero-filled** (empty days render as 0). Revenue is
+  **net of restores**.
+- **Purchases API is paginated** (`page`/`size`, `PagedPurchasesDto`); the portal has Prev/Next and a
+  per-purchase **event log** on the detail page. Typed id search (userId/itemId/entitlementId) is
+  **case-insensitive substring**.
+- **New portal features:** delete users, profile edit (`PATCH /portal/auth/me`), edit item price,
+  enable/disable app, Settings & Users now render inside the sidebar layout.
+- **DB performance:** added composite indexes (`idx_purchase_app_status_completed`,
+  `idx_purchase_app_created`, `idx_evt_app_time`, `idx_evt_purchase`, `idx_ent_app_status`); the old
+  `idx_purchase_status` was removed. Analytics window queries are pushed down to derived methods.
+- **Idempotency-Key is unique per attempt** (was stable per item+user) — fixes a re-buy-after-restore
+  bug where confirm replayed the first purchase and left the new one stuck at `CREATED`.
+- **UI redesign:** the demo app (gradient hero, color-coded cards) and the SDK popup (centered product
+  hero with a generated per-product artwork tile + payment picker) were modernized. New error code
+  `USER_NOT_FOUND`.
+
+---
+
 ## Table of contents
 
 1. [Project Overview](#1-project-overview)
@@ -133,7 +170,7 @@ modes:
 
                                  ▲
                                  │ HTTP(S)  /api/v1/sdk/**  (X-SDK-API-Key)
-                                 │ ✓ WIRED — ApiClient makes real HTTP calls
+                                 │ WIRED — ApiClient makes real HTTP calls
                                  │
 ┌─────────────────────────────────────────────────────────────────────┐
 │  ANDROID APP  (app/) ── embeds ──▶  ANDROID SDK (iap-sdk)            │
@@ -308,8 +345,10 @@ an integer you can sum safely. Mixing them is a classic money bug, so they're se
 |---|---|---|
 | `id` | String | **PK** |
 | `developerAppId`, `userId`, `itemId` | String | soft FKs (indexes `idx_purchase_app_user`, `idx_purchase_status`) |
-| `billingMode` | enum String | `MOCK` / `GOOGLE_PLAY` |
-| `status` | enum String | `CREATED`/`PENDING`/`SUCCESS`/`FAILED`/`CANCELLED`/`REQUIRES_VERIFICATION` |
+| `billingMode` | enum String | `MOCK` / `GOOGLE_PLAY` (fulfilment path) |
+| `paymentMethod` | enum String | `APPLE_PAY`/`GOOGLE_PLAY`/`PAYPAL`/`CREDIT_CARD` — the revenue-breakdown dimension |
+| `status` | enum String | `CREATED`/`PENDING`/`SUCCESS`/`FAILED`/`CANCELLED`/`REQUIRES_VERIFICATION`/`RESTORED` |
+| `priceAmountMinor`, `priceCurrency` | Long, String | **price snapshot** at purchase time (revenue math prefers this) |
 | `provider` | enum String | `MOCK` / `GOOGLE_PLAY` |
 | `providerPurchaseToken` | String | Google token (stored for verification, **never logged in full**) |
 | `providerOrderId` | String | safe to display |
@@ -418,10 +457,12 @@ seed loader can back-date rows for realistic charts. *Why this matters:* without
 event would have "now" as its timestamp and the time-series charts would be a single spike.
 
 **Enums** (`domain/enums/`): `BillingMode {MOCK, GOOGLE_PLAY}`, `BillingProviderType {MOCK,
-GOOGLE_PLAY}`, `ItemType {NON_CONSUMABLE, CONSUMABLE, SUBSCRIPTION}`, `PurchaseStatus {CREATED, PENDING,
-SUCCESS, FAILED, CANCELLED, REQUIRES_VERIFICATION}`, `EntitlementStatus {ACTIVE, EXPIRED, REVOKED}`,
-`DeveloperUserRole {OWNER, ADMIN, VIEWER}`, `ApiKeyStatus {ACTIVE, REVOKED}`. They're stored as strings
-(`@Enumerated(EnumType.STRING)`) so adding a value doesn't shift ordinals.
+GOOGLE_PLAY}`, `PaymentMethod {APPLE_PAY, GOOGLE_PLAY, PAYPAL, CREDIT_CARD}`, `ItemType {NON_CONSUMABLE,
+CONSUMABLE, SUBSCRIPTION}`, `PurchaseStatus {CREATED, PENDING, SUCCESS, FAILED, CANCELLED,
+REQUIRES_VERIFICATION, RESTORED}`, `EntitlementStatus {ACTIVE, EXPIRED, REVOKED}`,
+`DeveloperUserRole {OWNER, ADMIN, VIEWER}` *(inert — roles no longer enforced)*, `ApiKeyStatus {ACTIVE,
+REVOKED}`. They're stored as strings (`@Enumerated(EnumType.STRING)`) so adding a value doesn't shift
+ordinals.
 
 ### 4.2 Repositories (`repository/`)
 
@@ -476,8 +517,10 @@ These hold the business rules. They are stateless `@Service` beans.
        - **GOOGLE_PLAY** → `GooglePlayVerificationService.verifyPurchase` → on `NOT_CONFIGURED`: mark
          purchase `REQUIRES_VERIFICATION`, emit `purchase_failed`, throw `GOOGLE_PLAY_NOT_CONFIGURED`.
          (On a hypothetical `VERIFIED` it would grant; on `FAILED` it throws `PURCHASE_VERIFICATION_FAILED`.)
-  - `restorePurchases(app, req)` → MOCK returns prior `SUCCESS` purchases + active entitlements;
-    GOOGLE_PLAY throws `GOOGLE_PLAY_NOT_CONFIGURED`.
+  - `restorePurchases(app, req)` → **return/refund**: for each currently-owned item (optionally a
+    single `req.itemId()`), writes a `RESTORED` purchase, **revokes** the entitlement, and returns it —
+    the portal then subtracts the item's price from revenue. Idempotent (a returned item is skipped
+    next time). GOOGLE_PLAY throws `GOOGLE_PLAY_NOT_CONFIGURED`.
   - *Design subtlety:* `confirm` is intentionally **not** `@Transactional`, so the "mark
     REQUIRES_VERIFICATION then throw" path actually persists the status before the exception rolls
     nothing back. Touches `purchase`, `purchase_item`, `entitlement`, `idempotency_record`,
@@ -515,8 +558,8 @@ These hold the business rules. They are stateless `@Service` beans.
 
 - **`BillingModes`** — `parseOrDefault` / `parseOrNull` to turn the client's billing-mode string into
   the enum (throws `BILLING_MODE_NOT_SUPPORTED` on garbage).
-- **`DateRanges`** — turns optional `from`/`to` date params into an `Instant` range, defaulting to the
-  **last 365 days** (wide enough to show the full seeded Jan→today demo history by default).
+- **`DateRanges`** — turns optional `from`/`to` date params into an `Instant` range, defaulting the
+  start to **1 Jan 2026** (`DEFAULT_START`) so every portal view spans the full seeded demo history.
 - **`DtoMapper`** — entity → DTO conversions for the SDK/internal DTOs (`toItemDto`, `toAdminItemDto`,
   `toEntitlementSummary`, `toEntitlementDto`, `toAdminPurchaseDto`).
 
@@ -566,8 +609,9 @@ from `PortalContext`, authorize app ownership via `PortalAppService.requireOwned
 - **`PortalPurchaseController`** + **`PortalPurchaseService`** — list (with filters) + detail. Detail
   includes the item, the granted entitlement, and the linked analytics events — but **never** the raw
   provider token (only `providerOrderId`).
-- **`PortalEntitlementController`** + **`PortalEntitlementService`** — list + manual grant/revoke, which
-  require `OWNER`/`ADMIN` (`VIEWER` gets `FORBIDDEN`). Delegates to the core `EntitlementService`.
+- **`PortalEntitlementController`** + **`PortalEntitlementService`** — list + manual grant/revoke,
+  available to any authenticated portal user (roles were flattened). Delegates to the core
+  `EntitlementService`. List filters (userId/entitlementId) use case-insensitive substring matching.
 - **`PortalAnalyticsController`** + **`PortalAnalyticsService`** — the dashboards:
   - `overview` — all KPI counts + conversions (division-by-zero safe) + revenue (SUCCESS purchases ×
     `priceAmountMinor`) + active entitlements.
@@ -859,7 +903,7 @@ Tailwind + Recharts.
   UI refreshes automatically. *Why one file:* a single, discoverable data layer; pages stay declarative.
 - **`src/components/`**: `ui.tsx` (Button, Card, Input, Select, Badge, Kpi, CopyButton, CodeBlock,
   Alert, …), `Layout.tsx` (sidebar + top bar with app selector + logout), `ProtectedRoute.tsx`
-  (redirects to `/login` if unauthenticated), `Filters.tsx` (date/item/billing-mode/groupBy bar).
+  (redirects to `/login` if unauthenticated), `Filters.tsx` (date/item/payment-method/groupBy bar).
 
 ### 7.2 Pages (each is a route)
 
@@ -874,12 +918,13 @@ Tailwind + Recharts.
 | `/apps/:appId/items/new` | `NewItemPage` | Create item; auto snake_case `itemId`, auto `ent_…`, decimal price (e.g. `0.59`) converted to minor units, currency dropdown (`ILS/GBP/USD/EUR`); client validation. |
 | `/apps/:appId/items/:itemId` | `ItemDetailPage` | Metadata, **SDK snippet**, per-item stats (purchases/revenue/conversion/entitlements), recent purchases. |
 | `/apps/:appId/analytics` | `AnalyticsPage` | 10 KPI cards + the funnel bars; filters. |
-| `/apps/:appId/analytics/revenue` | `RevenuePage` | Recharts: revenue over time, purchases over time, revenue by product, revenue by billing mode (pie), + the by-product table. |
-| `/apps/:appId/purchases` | `PurchasesPage` | Purchases table with date/status/item/mode/user filters. |
+| `/apps/:appId/analytics/revenue` | `RevenuePage` | Recharts: revenue over time (zero-filled, net of restores), purchases over time, revenue by product, **revenue by payment method** (pie), + the by-product table. Defaults from 1 Jan 2026. |
+| `/apps/:appId/purchases` | `PurchasesPage` | **Paginated** purchases table with date/status/item/**payment-method**/user filters (substring id search). |
 | `/apps/:appId/purchases/:purchaseId` | `PurchaseDetailPage` | Full purchase, granted entitlement, linked events, failure reason; **no raw token**. |
-| `/apps/:appId/entitlements` | `EntitlementsPage` | Entitlements table + filters; admin-only manual grant/revoke with a warning. |
+| `/apps/:appId/entitlements` | `EntitlementsPage` | Entitlements table + filters; manual grant/revoke (any user; roles flattened). |
 | `/apps/:appId/sdk-setup` | `SdkSetupPage` | Copy-paste `init`/popup/entitlement snippets, MOCK-vs-GOOGLE_PLAY explanation, Google Play checklist. |
-| `/settings` | `SettingsPage` | Account info. |
+| `/settings` | `SettingsPage` | Profile edit (email/name/password) + demo-data reset. Rendered in the sidebar layout. |
+| `/users` | `UsersPage` | List / add / delete portal users. |
 
 **State management:** local form state with `useState`; **server** state entirely via TanStack Query
 (caching, refetch, invalidation). **Validation:** client-side in the forms (mirrors backend rules) plus
@@ -977,8 +1022,9 @@ emits its own server-side events during start/confirm/restore). **Where stored:*
   `PurchaseStatus` (SUCCESS / FAILED / CANCELLED / PENDING / …) — from the authoritative purchase
   table, not events. Shown as a status breakdown card on the Analytics page.
 
-All ranges default to the **last 12 months** (`DateRanges`), so the full seeded history is visible
-without picking dates.
+All ranges default their start to **1 Jan 2026** (`DateRanges.DEFAULT_START`), so the full seeded
+history is visible without picking dates. Revenue is **net of restores** and revenue-over-time is
+**zero-filled** (days with no sales render as 0 instead of being skipped).
 
 ---
 
@@ -1303,9 +1349,10 @@ above give the deeper "why"; this is the exhaustive checklist.
 
 **`domain/enums/`** — string-stored enums:
 - **`BillingMode.java`** `{MOCK, GOOGLE_PLAY}` · **`BillingProviderType.java`** `{MOCK, GOOGLE_PLAY}` ·
-  **`ItemType.java`** `{NON_CONSUMABLE, CONSUMABLE, SUBSCRIPTION}` · **`PurchaseStatus.java`**
-  `{CREATED,PENDING,SUCCESS,FAILED,CANCELLED,REQUIRES_VERIFICATION}` · **`EntitlementStatus.java`**
-  `{ACTIVE,EXPIRED,REVOKED}` · **`DeveloperUserRole.java`** `{OWNER,ADMIN,VIEWER}` ·
+  **`PaymentMethod.java`** `{APPLE_PAY, GOOGLE_PLAY, PAYPAL, CREDIT_CARD}` · **`ItemType.java`**
+  `{NON_CONSUMABLE, CONSUMABLE, SUBSCRIPTION}` · **`PurchaseStatus.java`**
+  `{CREATED,PENDING,SUCCESS,FAILED,CANCELLED,REQUIRES_VERIFICATION,RESTORED}` · **`EntitlementStatus.java`**
+  `{ACTIVE,EXPIRED,REVOKED}` · **`DeveloperUserRole.java`** `{OWNER,ADMIN,VIEWER}` *(inert)* ·
   **`ApiKeyStatus.java`** `{ACTIVE,REVOKED}`.
 
 **`repository/` (Spring Data JPA interfaces — one table each)**
@@ -1366,13 +1413,14 @@ above give the deeper "why"; this is the exhaustive checklist.
 - **`service/googleplay/VerificationResult.java`** — `{NOT_CONFIGURED, VERIFIED, FAILED}` + factories.
 - **`service/mapper/DtoMapper.java`** — entity→DTO for SDK/internal.
 - **`service/support/BillingModes.java`** — parse mode string (`parseOrDefault`/`parseOrNull`).
-- **`service/support/DateRanges.java`** — resolve from/to → Instant range (default last 365 days).
+- **`service/support/DateRanges.java`** — resolve from/to → Instant range (default start 1 Jan 2026).
+- **`service/support/PaymentMethods.java`** — parse the `paymentMethod` string → enum (default Credit Card).
 - **`service/portal/PortalAuthService.java`** — register/login → JWT; password hashing; duplicate-email
   guard. Touches `developer_user`.
 - **`service/portal/PortalAppService.java`** — app CRUD + `requireOwnedApp` ownership guard.
 - **`service/portal/PortalItemService.java`** — portal item CRUD; auto itemId/entitlementId; uniqueness.
 - **`service/portal/PortalPurchaseService.java`** — purchase list/detail (no raw token).
-- **`service/portal/PortalEntitlementService.java`** — list + manual grant/revoke (OWNER/ADMIN only).
+- **`service/portal/PortalEntitlementService.java`** — list + manual grant/revoke (any user; roles flattened).
 - **`service/portal/PortalAnalyticsService.java`** — overview/funnel/revenue aggregations from DB;
   division-by-zero safe; revenue from SUCCESS × `priceAmountMinor`.
 
@@ -1519,7 +1567,7 @@ Full multi-screen Compose demo using **only** the public `PurchaseSdk` facade.
 - **`components/ui.tsx`** — design-system primitives (Button, Card, Input, Kpi, CopyButton, CodeBlock…).
 - **`components/Layout.tsx`** — sidebar + top bar (app selector, user menu, logout); `<Outlet/>`.
 - **`components/ProtectedRoute.tsx`** — redirects to `/login` if unauthenticated.
-- **`components/Filters.tsx`** — date/item/billing-mode/groupBy filter bar.
+- **`components/Filters.tsx`** — date/item/payment-method/groupBy filter bar.
 - **`pages/LoginPage.tsx`/`RegisterPage.tsx`** — auth forms (login pre-fills demo creds).
 - **`pages/AppsPage.tsx`** — app cards + "New app".
 - **`pages/NewAppPage.tsx`** — create-app form (package-name validation).
@@ -1530,13 +1578,16 @@ Full multi-screen Compose demo using **only** the public `PurchaseSdk` facade.
   units, currency dropdown from `lib/constants.ts`).
 - **`pages/ItemDetailPage.tsx`** — metadata + SDK snippet + per-item stats.
 - **`pages/AnalyticsPage.tsx`** — 10 KPI cards + a **purchases-by-status** breakdown + funnel bars.
-- **`pages/RevenuePage.tsx`** — Recharts (revenue/purchases over time, by product, by mode) + table.
-- **`pages/PurchasesPage.tsx`** — purchases table with filters.
-- **`pages/PurchaseDetailPage.tsx`** — purchase + entitlement + events; no raw token.
-- **`pages/EntitlementsPage.tsx`** — list (newest-first by date) + admin-only grant/revoke + warning.
+- **`pages/RevenuePage.tsx`** — Recharts (revenue/purchases over time, by product, **by payment
+  method**) + table; defaults from 1 Jan 2026; zero-filled/net-of-restores.
+- **`pages/PurchasesPage.tsx`** — **paginated** purchases table with filters (Prev/Next).
+- **`pages/PurchaseDetailPage.tsx`** — purchase + entitlement + a chronological **event log** for
+  debugging (e.g. a CREATED-but-not-succeeded purchase); no raw token.
+- **`pages/EntitlementsPage.tsx`** — list (newest-first) + grant/revoke (any user; roles flattened).
+- **`pages/UsersPage.tsx`** — list/add/**delete** portal users (inside the sidebar layout).
 - **`pages/SdkSetupPage.tsx`** — copy-paste SDK snippets + MOCK/GOOGLE_PLAY explanation + GP checklist.
-- **`pages/SettingsPage.tsx`** — account info + a **"Danger zone"** (dev/demo) to reset & regenerate or
-  delete all demo data via `useResetDemoData`. *(TODO: profile edit, password reset.)*
+- **`pages/SettingsPage.tsx`** — **profile edit** (email/display name/password via `PATCH /auth/me`) +
+  a **"Danger zone"** (dev/demo) to reset & regenerate or delete all demo data.
 
 ### A.7 Portal — config (`portal-web/`)
 - **`package.json`** — deps (React, Router, TanStack Query, Axios, Tailwind, Recharts) + scripts.
