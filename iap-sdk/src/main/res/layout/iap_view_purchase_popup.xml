@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Root is PurchasePopupView (a FrameLayout). The MaterialCardView inside is a bottom sheet: full
+  width, top corners rounded. A centered product hero (artwork tile + name + price) tops the sheet,
+  followed by the payment/account rows and the confirm/cancel actions.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.FrameLayout">
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="@color/iap_surface"
+        app:cardElevation="@dimen/iap_card_elevation"
+        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Iap.Sheet">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="@dimen/iap_space_md"
+            android:paddingBottom="@dimen/iap_space_lg">
+
+            <!-- Grab handle -->
+            <View
+                android:layout_width="@dimen/iap_grab_width"
+                android:layout_height="@dimen/iap_grab_height"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="@dimen/iap_space_md"
+                android:background="@drawable/iap_grab_handle" />
+
+            <!-- Header -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingHorizontal="@dimen/iap_pad_h"
+                android:text="@string/iap_header"
+                android:textAppearance="@style/TextAppearance.Iap.Brand" />
+
+            <!-- Product artwork hero: gradient tile (set at runtime) with a monogram, or a real image -->
+            <FrameLayout
+                android:id="@+id/iap_artwork"
+                android:layout_width="@dimen/iap_artwork_size"
+                android:layout_height="@dimen/iap_artwork_size"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/iap_space_lg">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/iap_artwork_image"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Iap.Image"
+                    tools:src="@tools:sample/avatars"
+                    tools:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/iap_artwork_mark"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.Iap.ArtMark"
+                    tools:text="R" />
+            </FrameLayout>
+
+            <!-- Product name -->
+            <TextView
+                android:id="@+id/iap_text_item_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingHorizontal="@dimen/iap_pad_h"
+                android:layout_marginTop="@dimen/iap_space_lg"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="@style/TextAppearance.Iap.ProductName"
+                tools:text="Remove Ads" />
+
+            <!-- Product description -->
+            <TextView
+                android:id="@+id/iap_text_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingHorizontal="@dimen/iap_pad_h"
+                android:layout_marginTop="@dimen/iap_space_xs"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textAppearance="@style/TextAppearance.Iap.ItemSubtitle"
+                tools:text="Enjoy the app without ads forever." />
+
+            <!-- Price -->
+            <TextView
+                android:id="@+id/iap_text_price"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_marginTop="@dimen/iap_space_sm"
+                android:textAppearance="@style/TextAppearance.Iap.PriceLarge"
+                tools:text="$4.99" />
+
+            <View
+                style="@style/Widget.Iap.Divider"
+                android:layout_marginTop="@dimen/iap_space_lg" />
+
+            <!-- Payment row: card icon, method, change chevron. Tappable to choose a method. -->
+            <LinearLayout
+                android:id="@+id/iap_row_payment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/iap_pad_h"
+                android:paddingVertical="@dimen/iap_row_pad_v">
+
+                <ImageView
+                    android:layout_width="@dimen/iap_icon_size"
+                    android:layout_height="@dimen/iap_icon_size"
+                    android:layout_marginEnd="@dimen/iap_space_md"
+                    android:contentDescription="@string/iap_cd_payment"
+                    android:src="@drawable/iap_ic_card" />
+
+                <TextView
+                    android:id="@+id/iap_text_payment_method"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.Iap.RowValue"
+                    tools:text="Google Pay" />
+
+                <ImageView
+                    android:layout_width="@dimen/iap_icon_size"
+                    android:layout_height="@dimen/iap_icon_size"
+                    android:contentDescription="@string/iap_cd_change"
+                    android:src="@drawable/iap_ic_chevron" />
+            </LinearLayout>
+
+            <View style="@style/Widget.Iap.Divider" />
+
+            <!-- Account row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/iap_pad_h"
+                android:paddingVertical="@dimen/iap_row_pad_v">
+
+                <ImageView
+                    android:layout_width="@dimen/iap_icon_size"
+                    android:layout_height="@dimen/iap_icon_size"
+                    android:layout_marginEnd="@dimen/iap_space_md"
+                    android:contentDescription="@string/iap_cd_account"
+                    android:src="@drawable/iap_ic_account" />
+
+                <TextView
+                    android:id="@+id/iap_text_account_id"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.Iap.RowValue"
+                    tools:text="user_12345" />
+            </LinearLayout>
+
+            <View style="@style/Widget.Iap.Divider" />
+
+            <!-- Fine-print terms (optional; hidden when no disclaimer is set) -->
+            <TextView
+                android:id="@+id/iap_text_terms"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="@dimen/iap_pad_h"
+                android:paddingTop="@dimen/iap_space_md"
+                android:textAppearance="@style/TextAppearance.Iap.Terms"
+                android:visibility="gone"
+                tools:text="I understand this purchase is non-refundable."
+                tools:visibility="visible" />
+
+            <!-- Inline error (optional; shown by showError() when a purchase fails) -->
+            <TextView
+                android:id="@+id/iap_text_error"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="@dimen/iap_pad_h"
+                android:paddingTop="@dimen/iap_space_md"
+                android:textAppearance="@style/TextAppearance.Iap.Error"
+                android:visibility="gone"
+                tools:text="A network error occurred. Please try again."
+                tools:visibility="visible" />
+
+            <!-- Primary action: one large, full-width pill -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/iap_button_confirm"
+                style="@style/Widget.Iap.Button.Confirm"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/iap_pad_h"
+                android:layout_marginTop="@dimen/iap_space_lg"
+                android:text="@string/iap_button_confirm" />
+
+            <!-- Secondary action: quiet text button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/iap_button_cancel"
+                style="@style/Widget.Iap.Button.Cancel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/iap_pad_h"
+                android:layout_marginTop="@dimen/iap_space_xs"
+                android:text="@string/iap_button_cancel" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Loading overlay: centered spinner shown by setLoadingState(true) while a purchase runs -->
+    <ProgressBar
+        android:id="@+id/iap_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminateTint="@color/iap_primary"
+        android:visibility="gone"
+        tools:visibility="visible" />
+</merge>

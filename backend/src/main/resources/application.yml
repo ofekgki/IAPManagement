@@ -1,0 +1,46 @@
+# Default configuration. Local development uses the "dev" profile (see application-dev.yml),
+# which enables demo seed data. Override the active profile in production.
+spring:
+  application:
+    name: purchase-sdk-backend
+  profiles:
+    # TODO: do NOT default to "dev" in production — dev seeds demo data and uses an in-memory DB.
+    active: dev
+  datasource:
+    url: jdbc:h2:mem:purchasedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    # Keep explicit nulls (e.g. "error": null, "expiresAt": null) to match the documented contract.
+
+server:
+  port: 8080
+
+app:
+  # Token required by /api/v1/internal/** endpoints (header: X-Internal-Admin-Token).
+  # TODO: move this to a secret manager / environment variable; never commit a real token.
+  # TODO: if left blank, InternalAdminTokenFilter rejects all internal requests (fail closed).
+  internal-admin-token: ${INTERNAL_ADMIN_TOKEN:}
+  # MOCK subscription demo expiry. Real GOOGLE_PLAY expiry must come from verified Google data.
+  mock-subscription-days: 30
+  # Portal JWT signing secret (HS256). MUST be overridden in production. Never commit a real secret.
+  jwt-secret: ${JWT_SECRET:}
+  jwt-ttl-seconds: 86400
+  # Pepper mixed into API-key hashes. Override per environment; never commit a real value.
+  api-key-pepper: ${API_KEY_PEPPER:}
+  # Allowed CORS origin for the portal web app (Vite dev server by default).
+  portal-frontend-url: ${PORTAL_FRONTEND_URL:http://localhost:5173}
+
+logging:
+  level:
+    com.example.purchasebackend: INFO

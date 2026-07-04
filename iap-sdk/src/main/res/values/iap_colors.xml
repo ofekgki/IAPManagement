@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Light-mode palette for the IAP pop-up. Aligned with the platform-wide SaaS theme: a clean white
+  surface, near-black primary text, muted slate secondary text, a deep navy primary action, and a
+  teal accent for the price. All colors are prefixed `iap_`; the matching dark values live in
+  res/values-night/iap_colors.xml. Keep in sync with portal-web/tailwind.config.js.
+-->
+<resources>
+    <color name="iap_surface">#FFFFFFFF</color>          <!-- card / surface -->
+    <color name="iap_on_surface">#FF0F172A</color>       <!-- primary text -->
+    <color name="iap_on_surface_variant">#FF64748B</color> <!-- secondary text -->
+    <color name="iap_primary">#FF1E3A5F</color>          <!-- primary action -->
+    <color name="iap_primary_hover">#FF172C48</color>    <!-- primary pressed -->
+    <color name="iap_on_primary">#FFFFFFFF</color>
+    <color name="iap_accent">#FF14B8A6</color>           <!-- accent (price) -->
+    <color name="iap_outline">#FFE2E8F0</color>          <!-- subtle border -->
+    <color name="iap_chip_background">#FFF1F5F9</color>   <!-- subtle fill (cancel button) -->
+    <color name="iap_chip_text">#FF64748B</color>
+    <color name="iap_error">#FFDC2626</color>            <!-- error -->
+    <color name="iap_success">#FF16A34A</color>          <!-- success -->
+    <color name="iap_scrim">#99000000</color>
+
+    <!-- Product artwork gradients, one hue per product type (matches the demo app's card badges). -->
+    <color name="iap_art_lifetime_start">#FF8B5CF6</color>
+    <color name="iap_art_lifetime_end">#FF6D28D9</color>
+    <color name="iap_art_subscription_start">#FF2563EB</color>
+    <color name="iap_art_subscription_end">#FF1D4ED8</color>
+    <color name="iap_art_consumable_start">#FF14B8A6</color>
+    <color name="iap_art_consumable_end">#FF0F766E</color>
+    <color name="iap_on_art">#FFFFFFFF</color>
+</resources>

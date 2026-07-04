@@ -1,0 +1,20 @@
+# Docker/Compose profile: PostgreSQL + seed data (including sample analytics) for the demo stack.
+# Activate with SPRING_PROFILES_ACTIVE=docker.
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://postgres:5432/purchase_sdk}
+    username: ${DATABASE_USER:purchase}
+    password: ${DATABASE_PASSWORD:purchase}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+app:
+  seed:
+    enabled: ${SEED_ENABLED:true}
+    sample-data: ${SEED_SAMPLE_DATA:true}
+    # History window for generated demo data. end-date blank => today (container clock).
+    start-date: ${SEED_START_DATE:2026-01-01}
+    end-date: ${SEED_END_DATE:}

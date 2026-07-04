@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sample product image for the demo: a filled ink tile with a "premium" sparkle glyph.
+     Filled edge-to-edge so it crops cleanly into the pop-up's rounded image slot. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <path
+        android:fillColor="#2B2D3A"
+        android:pathData="M0,0 H48 V48 H0 Z" />
+
+    <!-- Main four-point sparkle -->
+    <path
+        android:fillColor="#F7F6F3"
+        android:pathData="M24,9 C24.9,17.4 26.6,19.1 35,20 C26.6,20.9 24.9,22.6 24,31 C23.1,22.6 21.4,20.9 13,20 C21.4,19.1 23.1,17.4 24,9 Z" />
+
+    <!-- Small accent sparkle -->
+    <path
+        android:fillColor="#F7F6F3"
+        android:pathData="M33,28 C33.3,30.4 33.6,30.7 36,31 C33.6,31.3 33.3,31.6 33,34 C32.7,31.6 32.4,31.3 30,31 C32.4,30.7 32.7,30.4 33,28 Z" />
+</vector>

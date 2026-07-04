@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Centralized metrics so the pop-up's density and corners are easy to tune in one place. -->
+<resources>
+    <dimen name="iap_sheet_corner">22dp</dimen>
+    <dimen name="iap_card_elevation">8dp</dimen>
+
+    <dimen name="iap_image_size">40dp</dimen>
+    <dimen name="iap_image_corner">10dp</dimen>
+    <dimen name="iap_icon_size">26dp</dimen>
+
+    <!-- Product artwork hero (the per-product tile at the top of the sheet). -->
+    <dimen name="iap_artwork_size">76dp</dimen>
+    <dimen name="iap_artwork_corner">22dp</dimen>
+    <dimen name="iap_grab_width">40dp</dimen>
+    <dimen name="iap_grab_height">4dp</dimen>
+
+    <dimen name="iap_confirm_height">52dp</dimen>
+    <dimen name="iap_confirm_corner">26dp</dimen>
+
+    <!-- Row paddings (horizontal inset; dividers stay full-bleed) -->
+    <dimen name="iap_pad_h">20dp</dimen>
+    <dimen name="iap_row_pad_v">14dp</dimen>
+
+    <!-- Compact spacing scale -->
+    <dimen name="iap_space_xs">4dp</dimen>
+    <dimen name="iap_space_sm">8dp</dimen>
+    <dimen name="iap_space_md">12dp</dimen>
+    <dimen name="iap_space_lg">16dp</dimen>
+</resources>

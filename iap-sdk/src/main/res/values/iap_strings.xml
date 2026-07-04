@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="iap_header">Confirm purchase</string>
+    <string name="iap_button_cancel">Cancel</string>
+    <string name="iap_button_confirm">Confirm</string>
+    <string name="iap_cd_payment">Payment method</string>
+    <string name="iap_cd_account">Account</string>
+    <string name="iap_cd_change">Change</string>
+    <string name="iap_payment_method_title">Choose a payment method</string>
+</resources>

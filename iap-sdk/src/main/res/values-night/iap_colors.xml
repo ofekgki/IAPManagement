@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Dark-mode palette: a deep slate surface with light text. Primary is a lightened navy so the
+  confirm button keeps good contrast on the dark surface; the teal accent reads well as-is.
+  Keep roles in sync with the light palette in res/values/iap_colors.xml.
+-->
+<resources>
+    <color name="iap_surface">#FF0F172A</color>          <!-- slate-900 surface -->
+    <color name="iap_on_surface">#FFF1F5F9</color>       <!-- primary text -->
+    <color name="iap_on_surface_variant">#FF94A3B8</color> <!-- secondary text -->
+    <color name="iap_primary">#FF3B6098</color>          <!-- lightened navy for contrast -->
+    <color name="iap_primary_hover">#FF2C4A72</color>
+    <color name="iap_on_primary">#FFFFFFFF</color>
+    <color name="iap_accent">#FF2DD4BF</color>           <!-- brighter teal on dark -->
+    <color name="iap_outline">#FF334155</color>
+    <color name="iap_chip_background">#FF1E293B</color>
+    <color name="iap_chip_text">#FFCBD5E1</color>
+    <color name="iap_error">#FFF87171</color>
+    <color name="iap_success">#FF4ADE80</color>
+    <color name="iap_scrim">#99000000</color>
+</resources>

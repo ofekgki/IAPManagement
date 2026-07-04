@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      Self-contained dialog theme. Extends a full Material DayNight theme so MaterialButton /
+      MaterialCardView / ShapeableImageView resolve their attributes, and maps the SDK palette onto
+      the Material color roles. Because the dialog applies this theme itself, the host app does NOT
+      need a Material theme for the pop-up to look right.
+    -->
+    <style name="Theme.Iap.Dialog" parent="Theme.MaterialComponents.DayNight">
+        <item name="colorPrimary">@color/iap_primary</item>
+        <item name="colorOnPrimary">@color/iap_on_primary</item>
+        <item name="colorSurface">@color/iap_surface</item>
+        <item name="colorOnSurface">@color/iap_on_surface</item>
+        <item name="android:colorBackground">@color/iap_surface</item>
+
+        <item name="android:windowNoTitle">true</item>
+        <!-- Non-floating so our MATCH_PARENT width controls sizing (a bottom sheet). -->
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimAmount">0.55</item>
+    </style>
+
+    <!-- Sheet shape: round the top corners only (sits flush at the bottom of the screen). -->
+    <style name="ShapeAppearanceOverlay.Iap.Sheet" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">@dimen/iap_sheet_corner</item>
+        <item name="cornerSizeTopRight">@dimen/iap_sheet_corner</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <!-- Rounded corners for the product image. -->
+    <style name="ShapeAppearanceOverlay.Iap.Image" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/iap_image_corner</item>
+    </style>
+
+    <!-- Full-bleed hairline divider between rows. -->
+    <style name="Widget.Iap.Divider" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:background">@color/iap_outline</item>
+    </style>
+
+    <!-- Brand/header line at the top of the sheet. -->
+    <style name="TextAppearance.Iap.Brand" parent="TextAppearance.MaterialComponents.Subtitle1">
+        <item name="android:textColor">@color/iap_on_surface</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <!-- Item row: title + subtitle + price -->
+    <style name="TextAppearance.Iap.ItemTitle" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textColor">@color/iap_on_surface</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Iap.ItemSubtitle" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="android:textColor">@color/iap_on_surface_variant</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="TextAppearance.Iap.Price" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textColor">@color/iap_accent</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- Product name shown large under the artwork hero. -->
+    <style name="TextAppearance.Iap.ProductName" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:textColor">@color/iap_on_surface</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <!-- Large, prominent price under the product name. -->
+    <style name="TextAppearance.Iap.PriceLarge" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:textColor">@color/iap_accent</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <!-- The monogram letter drawn on the product artwork tile. -->
+    <style name="TextAppearance.Iap.ArtMark" parent="TextAppearance.MaterialComponents.Headline5">
+        <item name="android:textColor">@color/iap_on_art</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">34sp</item>
+    </style>
+
+    <!-- Generic row value (payment method, account id) -->
+    <style name="TextAppearance.Iap.RowValue" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textColor">@color/iap_on_surface</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <!-- Fine-print terms / disclaimer -->
+    <style name="TextAppearance.Iap.Terms" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="android:textColor">@color/iap_on_surface_variant</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:lineSpacingMultiplier">1.2</item>
+    </style>
+
+    <!-- Inline error text shown when a purchase fails -->
+    <style name="TextAppearance.Iap.Error" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="android:textColor">@color/iap_error</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:lineSpacingMultiplier">1.2</item>
+    </style>
+
+    <!-- Confirm: one large, full-width pill. The primary action. -->
+    <style name="Widget.Iap.Button.Confirm" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/iap_primary</item>
+        <item name="android:textColor">@color/iap_on_primary</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:minHeight">@dimen/iap_confirm_height</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">@dimen/iap_confirm_corner</item>
+    </style>
+
+    <!-- Cancel: subtle tonal button beneath Confirm. Light fill + secondary text. Secondary action. -->
+    <style name="Widget.Iap.Button.Cancel" parent="Widget.MaterialComponents.Button.UnelevatedButton">
+        <item name="backgroundTint">@color/iap_chip_background</item>
+        <item name="android:textColor">@color/iap_chip_text</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:minHeight">@dimen/iap_confirm_height</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">@dimen/iap_confirm_corner</item>
+        <item name="rippleColor">@color/iap_outline</item>
+    </style>
+
+</resources>

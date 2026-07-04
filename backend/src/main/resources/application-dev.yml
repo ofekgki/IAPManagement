@@ -1,0 +1,26 @@
+# Local development profile. Enables demo seed data (see SeedDataLoader) and the H2 console.
+# This profile must not be active in production.
+spring:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+app:
+  seed:
+    enabled: true
+    # Generate sample analytics + purchases so dashboards have data. DEV ONLY.
+    sample-data: true
+    # History window for the generated demo data. end-date blank => today (system clock).
+    # Change these to shift the demo timeline; the portal "Reset & regenerate" button respects them.
+    start-date: ${SEED_START_DATE:2026-01-01}
+    end-date: ${SEED_END_DATE:}
+  # Convenience admin token for local internal-endpoint testing only.
+  internal-admin-token: ${INTERNAL_ADMIN_TOKEN:dev_internal_admin_token}
+  # Dev-only insecure defaults so the app boots without env vars. NEVER use these in production.
+  jwt-secret: ${JWT_SECRET:dev-insecure-jwt-secret-change-me-please-0123456789}
+  api-key-pepper: ${API_KEY_PEPPER:dev-insecure-api-key-pepper}
+
+logging:
+  level:
+    com.example.purchasebackend: DEBUG
