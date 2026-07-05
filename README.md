@@ -17,6 +17,7 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 ![License](https://img.shields.io/badge/License-Educational-64748B)
 [![jitPack](https://jitpack.io/v/ofekgki/IAPManagement.svg)](https://jitpack.io/#ofekgki/IAPManagement)
 
+
 **Documentation site** — ([docs/index.html](https://ofekgki.github.io/IAPManagement/index.html)), served via GitHub Pages.
 
 </div>
