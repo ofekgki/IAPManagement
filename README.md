@@ -40,6 +40,7 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 - [JSON snippets](#json-snippets)
 - [Database snippets](#database-snippets)
 - [Documentation](#documentation)
+- [Tech stack](#tech-stack)
 
 ---
 
@@ -53,13 +54,10 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 | **Developer portal** | [`portal-web/`](portal-web) | React 18, TypeScript, Vite, TanStack Query, Tailwind, Recharts | Dashboard to manage apps/keys/items and view revenue & analytics. |
 | **Shared** | [`shared/`](shared) | TypeScript | Cross-project enums + the response envelope contract. |
 
-**Three authentication surfaces** on the backend:
-
-| Surface | Prefix | Auth |
-|---|---|---|
-| SDK | `/api/v1/sdk/**` | `X-SDK-API-Key: <raw key>` (only a hash is stored) |
-| Portal | `/api/v1/portal/**` | `Authorization: Bearer <JWT>` |
-| Internal | `/api/v1/internal/**` | `X-Internal-Admin-Token` (fails closed) |
+> **Run the server locally with Docker.** The backend is self-contained — from the repo root,
+> `docker compose up --build` starts the backend on `http://localhost:8080` and the portal on
+> `http://localhost:5173`. The Android SDK points at that local backend (`http://10.0.2.2:8080` from an
+> emulator). Full steps in [Quick start](#quick-start).
 
 > **No real payments.** MOCK mode simulates the whole flow for demo/education. GOOGLE_PLAY mode is
 > scaffolded — every real step is a TODO and it fails with `GOOGLE_PLAY_NOT_CONFIGURED` rather than
@@ -107,9 +105,10 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 ### Demo app (Android)
 | Home | Store | Purchase popup |
 |---|---|---|
-| ![Demo home](docs/media/demo-home.png) | ![Demo store](docs/media/demo-store.png) | ![Demo popup](docs/media/demo-popup.png) |
+| <img src="docs/media/demo-home.png" alt="Demo home" height="340" /> | <img src="docs/media/demo-store.png" alt="Demo store" height="340" /> | <img src="docs/media/demo-popup.png" alt="Demo popup" height="340" /> |
 
 ### Walkthrough videos
+- Overview / explainer: [`docs/media/Explanation_Video.mp4`](docs/media/Explanation_Video.mp4) *(embedded on the [docs site](https://ofekgki.github.io/IAPManagement/))*
 - Demo app: [`docs/media/demo-walkthrough.mp4`](docs/media/demo-walkthrough.mp4)
 - Portal: [`docs/media/portal-walkthrough.mp4`](docs/media/portal-walkthrough.mp4)
 
@@ -117,27 +116,32 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 
 ## Architecture
 
-```text
-        ANDROID CLIENT                          BACKEND (Spring Boot)
- ┌───────────────────────┐            ┌──────────────────────────────────────┐
- │  Demo app (Compose)   │            │  SDK API      /api/v1/sdk/**          │
- │        │ calls        │   HTTPS    │  (X-SDK-API-Key) ─────────┐           │
- │        ▼              │   JSON     │                           │           │
- │  iap-sdk (Kotlin)     │ ─────────▶ │  Portal API   /api/v1/portal/**       │
- └───────────────────────┘            │  (JWT) ───────────────────┤           │
-                                      │                           ▼           │
- ┌───────────────────────┐   HTTPS    │  Internal API /api/v1/internal/**     │
- │  Developer portal      │   JSON     │  (admin token) ──▶  Services          │
- │  (React + Vite + TS)   │ ─────────▶ │      Purchase · Entitlement ·         │
- └───────────────────────┘            │      Analytics · ApiKey · Item        │
-                                      │                     │                 │
-                                      │                     ▼                 │
-                                      │           Spring Data JPA / Hibernate │
-                                      └─────────────────────┬─────────────────┘
-                                                            ▼
-                                              ┌───────────────────────────┐
-                                              │   PostgreSQL  /  H2 (dev)  │
-                                              └───────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph clients [Clients]
+        app["Demo app<br/>Jetpack Compose"]
+        sdk["iap-sdk<br/>Kotlin library"]
+        portal["Developer portal<br/>React + Vite + TS"]
+        app --> sdk
+    end
+
+    subgraph backend [Backend — Spring Boot]
+        sdkApi["SDK API<br/>/api/v1/sdk/**"]
+        portalApi["Portal API<br/>/api/v1/portal/**"]
+        internalApi["Internal API<br/>/api/v1/internal/**"]
+        services["Services<br/>Purchase · Entitlement · Analytics · ApiKey · Item"]
+        jpa["Spring Data JPA / Hibernate"]
+        sdkApi --> services
+        portalApi --> services
+        internalApi --> services
+        services --> jpa
+    end
+
+    db[("PostgreSQL / H2")]
+
+    sdk -- "HTTPS · JSON" --> sdkApi
+    portal -- "HTTPS · JSON" --> portalApi
+    jpa --> db
 ```
 
 ---
@@ -255,28 +259,25 @@ erDiagram
 
 ## Purchase flow (sequence)
 
-```text
- User        Demo app        iap-sdk            Backend (SDK API)          Database
-  │             │               │                     │                      │
-  │  tap Buy    │               │                     │                      │
-  ├────────────▶│ showPurchasePopup(itemId)           │                      │
-  │             ├──────────────▶│                     │                      │
-  │             │               │ POST /purchases/start (X-SDK-API-Key)      │
-  │             │               ├────────────────────▶│ INSERT purchase      │
-  │             │               │                     ├─(CREATED)+snapshot──▶ │
-  │             │               │  { purchaseId, PENDING }                   │
-  │             │               │◀────────────────────┤                      │
-  │  pick payment method, Confirm│                    │                      │
-  ├─────────────────────────────▶│ POST /purchases/confirm                   │
-  │             │               ├────────────────────▶│ MOCK fulfil          │
-  │             │               │                     ├─SUCCESS + grant ────▶ │
-  │             │               │                     │  entitlement +        │
-  │             │               │  { SUCCESS, entitlement }   analytics       │
-  │             │               │◀────────────────────┤                      │
-  │             │ onPurchaseSuccess(result)           │                      │
-  │             │◀──────────────┤                     │                      │
-  │  item shows "Owned"         │                     │                      │
-  │◀────────────┤               │                     │                      │
+```mermaid
+sequenceDiagram
+    actor User
+    participant App as Demo app
+    participant SDK as iap-sdk
+    participant API as Backend (SDK API)
+    participant DB as Database
+
+    User->>App: tap Buy
+    App->>SDK: showPurchasePopup(itemId)
+    SDK->>API: POST /purchases/start (X-SDK-API-Key)
+    API->>DB: INSERT purchase (CREATED) + price snapshot
+    API-->>SDK: { purchaseId, PENDING }
+    User->>SDK: pick payment method, Confirm
+    SDK->>API: POST /purchases/confirm (Idempotency-Key)
+    API->>DB: MOCK fulfil → SUCCESS + grant entitlement + analytics
+    API-->>SDK: { SUCCESS, entitlement }
+    SDK-->>App: onPurchaseSuccess(result)
+    App-->>User: item shows "Owned"
 ```
 
 > The `Idempotency-Key` is **unique per purchase attempt**. A stable key would make the backend replay
@@ -286,27 +287,23 @@ erDiagram
 
 ## Purchase lifecycle (state)
 
-```text
-                 POST /start
-                     │
-                     ▼
-                 ┌─────────┐  user dismiss        ┌───────────┐
-                 │ CREATED │────────────────────▶ │ CANCELLED │ (end)
-                 └────┬────┘                       └───────────┘
-        MOCK confirm  │  await provider
-             │        ▼
-             │   ┌─────────┐  verified            ┌─────────┐
-             │   │ PENDING │────────────────────▶ │ SUCCESS │
-             │   └────┬────┘                       └────┬────┘
-             │        │ failed        ┌────────┐        │ restore / return (refund)
-             └───────▶│──────────────▶│ FAILED │(end)   ▼
-             SUCCESS  │               └────────┘   ┌──────────┐
-                      │ not configured             │ RESTORED │ (end)
-                      ▼                             └──────────┘
-              ┌────────────────────────┐
-              │ REQUIRES_VERIFICATION  │ (end — Google Play not configured, fails safe)
-              └────────────────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> CREATED: POST /start
+    CREATED --> CANCELLED: user dismiss
+    CREATED --> PENDING: await provider
+    CREATED --> SUCCESS: MOCK confirm
+    CREATED --> REQUIRES_VERIFICATION: Google Play not configured
+    PENDING --> SUCCESS: verified
+    PENDING --> FAILED: failed
+    SUCCESS --> RESTORED: restore / return (refund)
+    CANCELLED --> [*]
+    FAILED --> [*]
+    REQUIRES_VERIFICATION --> [*]
+    RESTORED --> [*]
 ```
+
+> `REQUIRES_VERIFICATION` is terminal here: Google Play verification is scaffolded and fails safe until configured.
 
 **Terminal states:** `SUCCESS`, `FAILED`, `CANCELLED`, `REQUIRES_VERIFICATION`, `RESTORED`.
 
@@ -546,11 +543,27 @@ Key columns worth knowing (`purchase` table):
 
 | Doc | What's inside |
 |---|---|
+| [Docs site](https://ofekgki.github.io/IAPManagement/) ([`docs/index.html`](docs/index.html)) | Firebase-style docs home — overview video, use cases, get-started. |
+| [Integration guide](https://ofekgki.github.io/IAPManagement/integration.html) ([`docs/integration.html`](docs/integration.html)) | Step-by-step: add the SDK, initialize, purchase, entitlements, restore, analytics. |
 | [`docs/API_ENDPOINTS.md`](docs/API_ENDPOINTS.md) | Every REST endpoint with auth, request & response shapes. |
 | [`docs/DATABASE_QUERIES.md`](docs/DATABASE_QUERIES.md) | Every repository method, generated SQL, tables & index design. |
 | [`docs/DEMO_GUIDE.md`](docs/DEMO_GUIDE.md) | Run-the-demo walkthrough and click-by-click script. |
 | [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) | Deeper developer/integration notes. |
 | [`docs/media/`](docs/media) | Screenshots & videos referenced by this README. |
+
+---
+
+## Tech stack
+
+| Layer | Technologies |
+|---|---|
+| **Android SDK** | Kotlin · Android View system · Kotlin Coroutines · Material Components · Gson · `HttpURLConnection` · ContentProvider auto-init |
+| **Demo app** | Kotlin · Jetpack Compose · Material 3 |
+| **Backend** | Java 17 · Spring Boot 3.3 · Spring Web · Spring Data JPA / Hibernate · Spring Security (JWT) · H2 (dev) · PostgreSQL (prod) |
+| **Developer portal** | React 18 · TypeScript · Vite · React Router · TanStack Query · Axios · Tailwind CSS · Recharts |
+| **Shared** | TypeScript (cross-project enums + response envelope) |
+| **Build & tooling** | Gradle (AGP 9, built-in Kotlin) · Maven · JitPack · Docker Compose |
+| **Docs** | GitHub Pages · Mermaid diagrams |
 
 ---
 

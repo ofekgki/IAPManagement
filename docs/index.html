@@ -80,6 +80,17 @@
   table.api th,table.api td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
   table.api th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
   .kbd{font-size:12px;color:var(--muted)}
+  /* Embedded media */
+  .embed{width:100%;border-radius:12px;border:1px solid var(--border);background:#000;display:block}
+  .embed.hero{max-height:460px}
+  .shot{display:block;max-width:100%;max-height:340px;margin:0 auto;border-radius:10px;border:1px solid var(--border)}
+  /* Call-to-action buttons */
+  .cta{margin:20px 0 4px}
+  .btn{display:inline-block;background:var(--navy);color:#fff;font-weight:600;font-size:14px;padding:11px 20px;
+    border-radius:10px;margin:0 10px 10px 0}
+  .btn:hover{background:var(--navy-dark);text-decoration:none;color:#fff}
+  .btn.ghost{background:transparent;color:var(--navy);border:1px solid var(--border)}
+  .btn.ghost:hover{background:#f1f5f9}
   @media(max-width:880px){.wrap{grid-template-columns:1fr}nav.side{display:none}main{padding:24px 18px 90px}
     .grid.two,.grid.three{grid-template-columns:1fr}}
 </style>
@@ -89,6 +100,7 @@
 <header class="topbar">
   <div class="brand"><span class="logo">P</span> Purchase SDK · Docs</div>
   <div class="spacer"></div>
+  <a href="integration.html">Integration guide</a>
   <a href="API_ENDPOINTS.md">API</a>
   <a href="DEVELOPER_GUIDE.md">Developer guide</a>
   <a href="DATABASE_QUERIES.md">Database</a>
@@ -101,6 +113,7 @@
     <a href="#use-cases">Use cases</a>
     <a href="#features">Features</a>
     <a href="#how-it-works">How it works</a>
+    <a href="integration.html">Full integration guide &rarr;</a>
     <div class="group">Setup</div>
     <a href="#get-key">Get an API key</a>
     <div class="group">App · SDK</div>
@@ -127,23 +140,42 @@
         <img alt="Portal" src="https://img.shields.io/badge/Portal-React%20%2B%20Vite-2563EB?logo=react&logoColor=white">
       </div>
 
+      <div class="cta">
+        <a class="btn" href="integration.html">Full integration guide &rarr;</a>
+        <a class="btn ghost" href="#app-start">SDK quick start</a>
+      </div>
+
+      <h2>Watch the overview</h2>
+      <figure>
+        <video class="embed hero" controls preload="metadata" poster="media/demo-store.png">
+          <source src="media/Explanation_Video.mp4" type="video/mp4">
+          Your browser can't play this video — <a href="media/Explanation_Video.mp4">download it</a>.
+        </video>
+        <figcaption>Platform overview — SDK, backend &amp; portal end-to-end</figcaption>
+      </figure>
+
       <h2>See it in action</h2>
       <div class="grid two">
         <figure>
-          <div class="media"><a href="media/demo-walkthrough.mp4">▶ demo-walkthrough.mp4</a><br>Demo app: buy &rarr; own &rarr; return</div>
-          <figcaption>Android demo app walkthrough</figcaption>
+          <video class="embed" controls preload="metadata" poster="media/demo-store.png">
+            <source src="media/demo-walkthrough.mp4" type="video/mp4">
+            <a href="media/demo-walkthrough.mp4">download demo-walkthrough.mp4</a>
+          </video>
+          <figcaption>Android demo app: buy &rarr; own &rarr; return</figcaption>
         </figure>
         <figure>
-          <div class="media"><a href="media/portal-walkthrough.mp4">▶ portal-walkthrough.mp4</a><br>Portal: analytics &amp; revenue</div>
-          <figcaption>Developer portal walkthrough</figcaption>
+          <video class="embed" controls preload="metadata" poster="media/portal-revenue.png">
+            <source src="media/portal-walkthrough.mp4" type="video/mp4">
+            <a href="media/portal-walkthrough.mp4">download portal-walkthrough.mp4</a>
+          </video>
+          <figcaption>Developer portal: analytics &amp; revenue</figcaption>
         </figure>
       </div>
       <div class="grid three" style="margin-top:14px">
-        <figure><div class="media"><img alt="Demo store" src="media/demo-store.png" style="max-width:100%;border-radius:8px"></div><figcaption>Store</figcaption></figure>
-        <figure><div class="media"><img alt="Purchase popup" src="media/demo-popup.png" style="max-width:100%;border-radius:8px"></div><figcaption>Purchase popup</figcaption></figure>
-        <figure><div class="media"><img alt="Portal revenue" src="media/portal-revenue.png" style="max-width:100%;border-radius:8px"></div><figcaption>Revenue dashboard</figcaption></figure>
+        <figure><img class="shot" alt="Demo store" src="media/demo-store.png"><figcaption>Store</figcaption></figure>
+        <figure><img class="shot" alt="Purchase popup" src="media/demo-popup.png"><figcaption>Purchase popup</figcaption></figure>
+        <figure><img class="shot" alt="Portal revenue" src="media/portal-revenue.png"><figcaption>Revenue dashboard</figcaption></figure>
       </div>
-      <p class="kbd" style="margin-top:8px">Screenshots/videos live in <code>docs/media/</code> — add the files listed there and these render inline.</p>
     </section>
 
     <!-- USE CASES -->
@@ -203,7 +235,7 @@
         <li><h3>Open the portal &amp; sign in</h3><p>Go to <code>http://localhost:5173</code> and log in with <code>demo@example.com</code> / <code>password123</code> (or register).</p></li>
         <li><h3>Create an app</h3><p><em>New app</em> → name + package (e.g. <code>com.example.game</code>) + default billing mode.</p></li>
         <li><h3>Generate an API key</h3><p>App → <em>API Keys</em> → <em>Create key</em>. The raw key is shown <strong>once</strong> — copy it. Only a hash is stored.</p>
-          <figure><div class="media"><img alt="API keys" src="media/portal-apikeys.png" style="max-width:100%;border-radius:8px"></div><figcaption>API keys page (create / revoke / rotate)</figcaption></figure></li>
+          <figure><img class="shot" alt="API keys" src="media/portal-apikeys.png"><figcaption>API keys page (create / revoke / rotate)</figcaption></figure></li>
         <li><h3>Create an item</h3><p>App → <em>Items</em> → <em>New item</em>. The item id auto-generates (<code>remove_ads</code>); price is stored in <strong>minor units</strong> (<code>499</code> = $4.99).</p></li>
       </ol>
     </section>
@@ -321,7 +353,7 @@ PurchaseSdk.restorePurchases("remove_ads")  // return a single item
         <li><h3>Run it</h3><p><code>docker compose up --build</code> → portal at <code>http://localhost:5173</code>, backend at <code>:8080</code>.</p></li>
         <li><h3>Sign in</h3><p><code>demo@example.com</code> / <code>password123</code>, or register a new account (you become the owner).</p></li>
         <li><h3>Create app → key → item</h3><p>See <a href="#get-key">Get an API key</a> above. Copy the item id into your app's SDK calls.</p>
-          <figure><div class="media"><img alt="Dashboard" src="media/portal-dashboard.png" style="max-width:100%;border-radius:8px"></div><figcaption>App dashboard — KPIs + setup checklist</figcaption></figure></li>
+          <figure><img class="shot" alt="Dashboard" src="media/portal-dashboard.png"><figcaption>App dashboard — KPIs + setup checklist</figcaption></figure></li>
       </ol>
     </section>
 
@@ -331,8 +363,8 @@ PurchaseSdk.restorePurchases("remove_ads")  // return a single item
 
       <h3>Revenue &amp; analytics</h3>
       <p>Revenue over time (zero-filled, net of returns), by product, and <strong>by payment method</strong>,
-      plus the paywall funnel and a purchases-by-status breakdown. Default window starts 1&nbsp;Jan&nbsp;2026.</p>
-      <figure><div class="media"><img alt="Revenue" src="media/portal-revenue.png" style="max-width:100%;border-radius:8px"></div><figcaption>Revenue: over-time area + by-payment-method pie</figcaption></figure>
+      plus the paywall funnel and a purchases-by-status breakdown. Default window starts at the beginning of the current calendar year.</p>
+      <figure><img class="shot" alt="Revenue" src="media/portal-revenue.png"><figcaption>Revenue: over-time area + by-payment-method pie</figcaption></figure>
 <pre><code>GET /api/v1/portal/apps/{appId}/analytics/revenue?groupBy=month
 → { "totalRevenueMinor": 422639, "byPaymentMethod": [...], "overTime": [...], "restoredValueMinor": 999 }</code></pre>
 
