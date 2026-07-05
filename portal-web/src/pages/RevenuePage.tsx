@@ -24,8 +24,11 @@ import { CHART, CHART_GRID, CHART_PALETTE, CHART_REVENUE_FILL } from "../lib/the
 
 export default function RevenuePage() {
   const { appId = "" } = useParams();
-  // Default the revenue view to the full demo history (from 1 Jan 2026).
-  const [filters, setFilters] = useState<FilterState>({ groupBy: "day", from: "2026-01-01" });
+  // Default the revenue view to year-to-date (from 1 Jan of the current calendar year).
+  const [filters, setFilters] = useState<FilterState>({
+    groupBy: "day",
+    from: `${new Date().getFullYear()}-01-01`,
+  });
   const revenue = useRevenue(appId, filters);
   const byProduct = useRevenueByProduct(appId, filters);
 
