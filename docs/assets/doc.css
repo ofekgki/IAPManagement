@@ -1,0 +1,81 @@
+:root{
+  --navy:#1E3A5F; --navy-dark:#172C48; --teal:#14B8A6; --teal-dark:#0F766E;
+  --canvas:#F8FAFC; --card:#FFFFFF; --border:#E2E8F0; --text:#0F172A; --muted:#64748B;
+  --code-bg:#0F172A; --code-text:#E2E8F0; --sidebar:#FFFFFF; --accent-blue:#2563EB;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:var(--text);background:var(--canvas);line-height:1.65;font-size:15px}
+a{color:var(--teal-dark);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Top bar */
+header.topbar{position:sticky;top:0;z-index:20;background:linear-gradient(90deg,var(--navy),var(--navy-dark) 60%,var(--teal-dark));
+  color:#fff;display:flex;align-items:center;gap:14px;padding:12px 22px;box-shadow:0 1px 0 rgba(0,0,0,.15)}
+.brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:16px}
+.brand a{color:#fff}
+.logo{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.16);display:flex;align-items:center;
+  justify-content:center;font-weight:800;color:#fff}
+.topbar .spacer{flex:1}
+.topbar a{color:#e2e8f0;font-size:13px;font-weight:600}
+.topbar a.active{color:#fff;text-decoration:underline}
+
+/* Layout: sidebar TOC + article */
+.wrap{display:grid;grid-template-columns:264px 1fr;max-width:1200px;margin:0 auto;gap:0}
+nav.side{position:sticky;top:55px;align-self:start;height:calc(100vh - 55px);overflow:auto;
+  background:var(--sidebar);border-right:1px solid var(--border);padding:22px 14px 60px}
+nav.side .group{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  font-weight:700;margin:6px 10px 8px}
+nav.side a{display:block;color:var(--muted);font-weight:500;padding:5px 10px;border-radius:9px;font-size:13.5px}
+nav.side a.h3{padding-left:22px;font-size:13px}
+nav.side a:hover{background:#f1f5f9;text-decoration:none;color:var(--text)}
+nav.side a.active{background:var(--navy);color:#fff}
+main{padding:8px 46px 120px;min-width:0;max-width:900px}
+
+/* Rendered-markdown prose */
+.md{scroll-margin-top:70px}
+.md h1{font-size:32px;margin:28px 0 .3em;letter-spacing:-.4px}
+.md h2{font-size:23px;margin:1.5em 0 .5em;padding-top:14px;border-top:1px solid var(--border)}
+.md h1+*+h2,.md h1+h2{border-top:none}
+.md h3{font-size:17px;margin:1.4em 0 .4em}
+.md h4{font-size:15px;margin:1.2em 0 .3em}
+.md h2,.md h3,.md h4{scroll-margin-top:70px}
+.md p,.md li{color:#1f2937}
+.md ul,.md ol{padding-left:22px}
+.md li{margin:4px 0}
+.md a{color:var(--teal-dark);font-weight:500}
+.md hr{border:none;border-top:1px solid var(--border);margin:34px 0}
+.md strong{color:#0f172a}
+.md img{max-width:100%}
+.md blockquote{margin:16px 0;padding:12px 16px;background:#f0f9ff;border:1px solid #bae6fd;
+  border-left:4px solid var(--accent-blue);border-radius:10px;color:#0c4a6e}
+.md blockquote p{color:#0c4a6e;margin:.3em 0}
+
+/* Inline + block code */
+.md code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;
+  background:#EEF2F7;color:#0b2440;padding:.12em .38em;border-radius:6px}
+.md pre{position:relative;background:var(--code-bg);color:var(--code-text);padding:16px 18px;border-radius:12px;
+  overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.55}
+.md pre code{background:none;color:inherit;padding:0;font-size:13px}
+.copy{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.1);color:#cbd5e1;border:1px solid rgba(255,255,255,.18);
+  border-radius:8px;font-size:11px;padding:4px 8px;cursor:pointer}
+.copy:hover{background:rgba(255,255,255,.18)}
+
+/* Tables */
+.md table{width:100%;border-collapse:collapse;font-size:13.5px;margin:1em 0;display:block;overflow-x:auto}
+.md th,.md td{text-align:left;padding:8px 11px;border:1px solid var(--border);vertical-align:top}
+.md thead th{background:#f1f5f9;color:#334155;font-size:12px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+.md tbody tr:nth-child(even){background:#fafbfc}
+.md td code{white-space:nowrap}
+
+/* Heading anchor link on hover */
+.md .anchor{opacity:0;margin-left:.35em;font-weight:400;color:var(--muted);font-size:.8em}
+.md h2:hover .anchor,.md h3:hover .anchor,.md h4:hover .anchor{opacity:1}
+
+/* Loading / error states */
+.status{color:var(--muted);padding:40px 0}
+.status.err{color:#b91c1c}
+
+@media(max-width:900px){.wrap{grid-template-columns:1fr}nav.side{display:none}main{padding:8px 18px 90px}}
