@@ -1,5 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
+    // Publishes the AAR (+ sources) so JitPack can serve this module as a Maven dependency.
+    `maven-publish`
 }
 
 android {
@@ -25,6 +27,30 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    // Expose a single "release" variant to publish, with a matching sources jar.
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
+}
+
+// JitPack picks up this publication. It overrides groupId/version with
+// com.github.<user> and the git tag, so we only wire up the release component here.
+// Consumers reference it as: com.github.ofekgki.IAPManagement:iap-sdk:<tag>
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "com.github.ofekgki"
+            artifactId = "iap-sdk"
+            version = "1.0.0"
+
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
     }
 }
 

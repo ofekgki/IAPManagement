@@ -1,0 +1,7 @@
+# JitPack build config for the :iap-sdk Android library.
+# AGP 9 / Gradle 9 require JDK 17+, and we only publish the SDK module
+# (the :app demo and other modules are not published).
+jdk:
+  - openjdk17
+install:
+  - ./gradlew :iap-sdk:publishToMavenLocal --no-configuration-cache -x test

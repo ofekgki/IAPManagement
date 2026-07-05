@@ -5,6 +5,7 @@ Keep the exact file names below so the README embeds resolve:
 
 | File | What to capture |
 |------|-----------------|
+| `logo.png` | Project logo — shown at the top of the root [`README.md`](../../README.md) |
 | `portal-dashboard.png` | Portal → app Dashboard (KPIs + recent purchases) |
 | `portal-revenue.png` | Portal → Revenue (over-time chart + by-payment-method pie) |
 | `portal-purchases.png` | Portal → Purchases (paginated table) |

@@ -61,24 +61,49 @@ without changing the public API.
 
 ## Installation
 
-This is a local Gradle module. The host app depends on it directly:
+### From JitPack (recommended)
+
+[![JitPack](https://jitpack.io/v/ofekgki/IAPManagement.svg)](https://jitpack.io/#ofekgki/IAPManagement)
+
+**1. Add the JitPack repository** to `settings.gradle.kts`:
 
 ```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }   // <-- add this
+    }
+}
+```
+
+**2. Add the dependency** (use a release tag, or `main-SNAPSHOT` for the latest commit):
+
+```kotlin
+// app/build.gradle.kts
+dependencies {
+    implementation("com.github.ofekgki.IAPManagement:iap-sdk:1.0.0")
+}
+```
+
+The coordinate is `com.github.<user>.<repo>:<module>` — the SDK module is `iap-sdk` inside the
+`IAPManagement` repo. Browse available versions at
+[jitpack.io/#ofekgki/IAPManagement](https://jitpack.io/#ofekgki/IAPManagement).
+
+### From source (this monorepo)
+
+When working inside the monorepo, depend on the module directly instead:
+
+```kotlin
+// settings.gradle.kts
+include(":iap-sdk")
+
 // app/build.gradle.kts
 dependencies {
     implementation(project(":iap-sdk"))
 }
 ```
-
-```kotlin
-// settings.gradle.kts
-include(":iap-sdk")
-```
-
-> Placeholder for the future published artifact:
-> ```kotlin
-> implementation("com.example.iapsdk:iap-sdk:<version>")
-> ```
 
 **Requirements:** `minSdk 24`, `compileSdk 37`, Material Components theme is **not** required in the
 host app — the popup themes itself.

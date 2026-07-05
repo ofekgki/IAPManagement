@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/media/logo.png" alt="Purchase SDK Platform" width="420" />
+
 # Purchase SDK Platform
 
 **An end-to-end in-app purchase platform — Android SDK · Spring Boot backend · React developer portal.**
@@ -13,6 +15,7 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 ![React](https://img.shields.io/badge/Portal-React%20%2B%20Vite%20%2B%20TS-2563EB?logo=react&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/DB-PostgreSQL%20%2F%20H2-4169E1?logo=postgresql&logoColor=white)
 ![License](https://img.shields.io/badge/License-Educational-64748B)
+[![jitPack](https://jitpack.io/v/ofekgki/IAPManagement.svg)](https://jitpack.io/#ofekgki/IAPManagement)
 
 **Documentation site** — ([docs/index.html](https://ofekgki.github.io/IAPManagement/index.html)), served via GitHub Pages.
 
@@ -338,6 +341,39 @@ Portal -> **Settings -> Danger zone**.
 ---
 
 ## SDK usage
+
+### Install (JitPack)
+
+[![JitPack](https://jitpack.io/v/ofekgki/IAPManagement.svg)](https://jitpack.io/#ofekgki/IAPManagement)
+
+**1. Add the JitPack repository** to `settings.gradle.kts` (or your root `build.gradle`):
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }   // <-- add this
+    }
+}
+```
+
+**2. Add the dependency** in your app module, using a released tag (or `main-SNAPSHOT` for the latest commit):
+
+```kotlin
+// app/build.gradle.kts
+dependencies {
+    implementation("com.github.ofekgki.IAPManagement:iap-sdk:1.0.0")
+}
+```
+
+> The coordinate is `com.github.<user>.<repo>:<module>` — here `com.github.ofekgki.IAPManagement:iap-sdk`.
+> Replace `1.0.0` with any [release tag](https://github.com/ofekgki/IAPManagement/releases) or a commit SHA.
+
+**Requirements:** `minSdk 24`. No Material Components theme required in the host app — the popup themes itself.
+
+### Use it
 
 ```kotlin
 // 1) Initialize once (e.g. Application.onCreate)

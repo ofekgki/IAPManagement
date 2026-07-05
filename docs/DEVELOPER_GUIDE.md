@@ -40,8 +40,8 @@ word). For the exact endpoints see [`API_ENDPOINTS.md`](API_ENDPOINTS.md); for q
   portal user has full access (add users, manual grant/revoke). The enum/field remain but are inert.
 - **Price snapshot.** `purchase.priceAmountMinor` + `priceCurrency` are captured at purchase time, so
   editing an item's price never rewrites historical revenue. All revenue math prefers the snapshot.
-- **Analytics defaults changed.** Default window start is **1 Jan 2026** (`DateRanges.DEFAULT_START`),
-  not "last 365 days". Revenue-over-time is **zero-filled** (empty days render as 0). Revenue is
+- **Analytics defaults changed.** Default window start is the **first day of the current calendar year**
+  (`DateRanges.defaultStart()`), not "last 365 days". Revenue-over-time is **zero-filled** (empty days render as 0). Revenue is
   **net of restores**.
 - **Purchases API is paginated** (`page`/`size`, `PagedPurchasesDto`); the portal has Prev/Next and a
   per-purchase **event log** on the detail page. Typed id search (userId/itemId/entitlementId) is
@@ -559,7 +559,7 @@ These hold the business rules. They are stateless `@Service` beans.
 - **`BillingModes`** — `parseOrDefault` / `parseOrNull` to turn the client's billing-mode string into
   the enum (throws `BILLING_MODE_NOT_SUPPORTED` on garbage).
 - **`DateRanges`** — turns optional `from`/`to` date params into an `Instant` range, defaulting the
-  start to **1 Jan 2026** (`DEFAULT_START`) so every portal view spans the full seeded demo history.
+  start to the **first day of the current calendar year** (`defaultStart()`) so every portal view spans year-to-date.
 - **`DtoMapper`** — entity → DTO conversions for the SDK/internal DTOs (`toItemDto`, `toAdminItemDto`,
   `toEntitlementSummary`, `toEntitlementDto`, `toAdminPurchaseDto`).
 
@@ -918,7 +918,7 @@ Tailwind + Recharts.
 | `/apps/:appId/items/new` | `NewItemPage` | Create item; auto snake_case `itemId`, auto `ent_…`, decimal price (e.g. `0.59`) converted to minor units, currency dropdown (`ILS/GBP/USD/EUR`); client validation. |
 | `/apps/:appId/items/:itemId` | `ItemDetailPage` | Metadata, **SDK snippet**, per-item stats (purchases/revenue/conversion/entitlements), recent purchases. |
 | `/apps/:appId/analytics` | `AnalyticsPage` | 10 KPI cards + the funnel bars; filters. |
-| `/apps/:appId/analytics/revenue` | `RevenuePage` | Recharts: revenue over time (zero-filled, net of restores), purchases over time, revenue by product, **revenue by payment method** (pie), + the by-product table. Defaults from 1 Jan 2026. |
+| `/apps/:appId/analytics/revenue` | `RevenuePage` | Recharts: revenue over time (zero-filled, net of restores), purchases over time, revenue by product, **revenue by payment method** (pie), + the by-product table. Defaults from the start of the current calendar year. |
 | `/apps/:appId/purchases` | `PurchasesPage` | **Paginated** purchases table with date/status/item/**payment-method**/user filters (substring id search). |
 | `/apps/:appId/purchases/:purchaseId` | `PurchaseDetailPage` | Full purchase, granted entitlement, linked events, failure reason; **no raw token**. |
 | `/apps/:appId/entitlements` | `EntitlementsPage` | Entitlements table + filters; manual grant/revoke (any user; roles flattened). |
@@ -1022,8 +1022,8 @@ emits its own server-side events during start/confirm/restore). **Where stored:*
   `PurchaseStatus` (SUCCESS / FAILED / CANCELLED / PENDING / …) — from the authoritative purchase
   table, not events. Shown as a status breakdown card on the Analytics page.
 
-All ranges default their start to **1 Jan 2026** (`DateRanges.DEFAULT_START`), so the full seeded
-history is visible without picking dates. Revenue is **net of restores** and revenue-over-time is
+All ranges default their start to the **first day of the current calendar year** (`DateRanges.defaultStart()`), so
+year-to-date is visible without picking dates. Revenue is **net of restores** and revenue-over-time is
 **zero-filled** (days with no sales render as 0 instead of being skipped).
 
 ---
@@ -1413,7 +1413,7 @@ above give the deeper "why"; this is the exhaustive checklist.
 - **`service/googleplay/VerificationResult.java`** — `{NOT_CONFIGURED, VERIFIED, FAILED}` + factories.
 - **`service/mapper/DtoMapper.java`** — entity→DTO for SDK/internal.
 - **`service/support/BillingModes.java`** — parse mode string (`parseOrDefault`/`parseOrNull`).
-- **`service/support/DateRanges.java`** — resolve from/to → Instant range (default start 1 Jan 2026).
+- **`service/support/DateRanges.java`** — resolve from/to → Instant range (default start: first day of the current year).
 - **`service/support/PaymentMethods.java`** — parse the `paymentMethod` string → enum (default Credit Card).
 - **`service/portal/PortalAuthService.java`** — register/login → JWT; password hashing; duplicate-email
   guard. Touches `developer_user`.
@@ -1579,7 +1579,7 @@ Full multi-screen Compose demo using **only** the public `PurchaseSdk` facade.
 - **`pages/ItemDetailPage.tsx`** — metadata + SDK snippet + per-item stats.
 - **`pages/AnalyticsPage.tsx`** — 10 KPI cards + a **purchases-by-status** breakdown + funnel bars.
 - **`pages/RevenuePage.tsx`** — Recharts (revenue/purchases over time, by product, **by payment
-  method**) + table; defaults from 1 Jan 2026; zero-filled/net-of-restores.
+  method**) + table; defaults from the start of the current calendar year; zero-filled/net-of-restores.
 - **`pages/PurchasesPage.tsx`** — **paginated** purchases table with filters (Prev/Next).
 - **`pages/PurchaseDetailPage.tsx`** — purchase + entitlement + a chronological **event log** for
   debugging (e.g. a CREATED-but-not-succeeded purchase); no raw token.

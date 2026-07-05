@@ -105,7 +105,7 @@ Base URL (dev): `http://localhost:8080`.
 | GET | `/{purchaseId}` | Detail + linked entitlement + event log. | `PurchaseDetailDto` |
 
 ### Analytics (`/api/v1/portal/apps/{appId}/analytics`)
-Common query params: `from`, `to` (default 1 Jan 2026 → now on the Revenue page), `itemId`,
+Common query params: `from`, `to` (default: start of the current calendar year → now), `itemId`,
 `paymentMethod`, and `groupBy=day|week|month` where noted.
 
 | Method | Path | Purpose | Response `data` |

@@ -214,12 +214,20 @@
       <p>Add the SDK, initialize it, and show the purchase popup. Everything below runs in MOCK mode
       against your backend.</p>
 
-      <h3>1. Add the dependency</h3>
-<pre><code>// settings.gradle.kts
-include(":iap-sdk")
+      <h3>1. Add the dependency (JitPack)</h3>
+<pre><code>// settings.gradle.kts — add the JitPack repository
+dependencyResolutionManagement {
+  repositories {
+    google()
+    mavenCentral()
+    maven { url = uri("https://jitpack.io") }
+  }
+}
 
-// app/build.gradle.kts
-dependencies { implementation(project(":iap-sdk")) }</code></pre>
+// app/build.gradle.kts — add the SDK (use a release tag or main-SNAPSHOT)
+dependencies { implementation("com.github.ofekgki.IAPManagement:iap-sdk:1.0.0") }</code></pre>
+      <p>Working inside the monorepo instead? Depend on the module directly with
+      <code>implementation(project(":iap-sdk"))</code>.</p>
 
       <h3>2a. Initialize — zero-config (recommended)</h3>
       <p>Declare meta-data in your manifest; the SDK's <code>PurchaseSdkInitProvider</code> auto-initializes
