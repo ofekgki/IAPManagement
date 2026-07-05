@@ -342,32 +342,27 @@ Portal -> **Settings -> Danger zone**.
 
 ### Install (JitPack)
 
-[![JitPack](https://jitpack.io/v/ofekgki/IAPManagement.svg)](https://jitpack.io/#ofekgki/IAPManagement)
-
 **1. Add the JitPack repository** to `settings.gradle.kts` (or your root `build.gradle`):
 
 ```kotlin
 // settings.gradle.kts
 dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }   // <-- add this
-    }
-}
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url 'https://jitpack.io' }
+		}
+	}
 ```
 
 **2. Add the dependency** in your app module, using a released tag (or `main-SNAPSHOT` for the latest commit):
 
 ```kotlin
 // app/build.gradle.kts
-dependencies {
-    implementation("com.github.ofekgki.IAPManagement:iap-sdk:1.0.0")
-}
+	dependencies {
+	        implementation 'com.github.ofekgki:IAPManagement:1.0.1'
+	}
 ```
-
-> The coordinate is `com.github.<user>.<repo>:<module>` — here `com.github.ofekgki.IAPManagement:iap-sdk`.
-> Replace `1.0.0` with any [release tag](https://github.com/ofekgki/IAPManagement/releases) or a commit SHA.
 
 **Requirements:** `minSdk 24`. No Material Components theme required in the host app — the popup themes itself.
 
