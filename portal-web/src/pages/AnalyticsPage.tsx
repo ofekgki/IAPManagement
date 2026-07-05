@@ -42,7 +42,7 @@ export default function AnalyticsPage() {
     <div>
       <PageHeader
         title="Analytics"
-        subtitle="Default range: last 12 months. Use the date filters to zoom in."
+        subtitle="Default range: from the start of the calendar year. Use the date filters to zoom in."
         actions={
           <Link to={`/apps/${appId}/analytics/revenue`}>
             <Button variant="secondary">Revenue →</Button>

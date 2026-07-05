@@ -14,6 +14,10 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 ![PostgreSQL](https://img.shields.io/badge/DB-PostgreSQL%20%2F%20H2-4169E1?logo=postgresql&logoColor=white)
 ![License](https://img.shields.io/badge/License-Educational-64748B)
 
+**Documentation site** — [`docs/index.html`](docs/index.html), served via GitHub Pages.
+Once enabled it lives at `https://<owner>.github.io/<repo>/`
+*(Settings → Pages → Deploy from a branch → `main` / `/docs`)*
+
 </div>
 
 ---
