@@ -13,7 +13,7 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 ![Android](https://img.shields.io/badge/Android-Kotlin%20%2B%20Compose-7F52FF?logo=kotlin&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Backend-Spring%20Boot%203.3-6DB33F?logo=springboot&logoColor=white)
 ![React](https://img.shields.io/badge/Portal-React%20%2B%20Vite%20%2B%20TS-2563EB?logo=react&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/DB-PostgreSQL%20%2F%20H2-4169E1?logo=postgresql&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/DB-PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 ![License](https://img.shields.io/badge/License-Educational-64748B)
 [![jitPack](https://jitpack.io/v/ofekgki/IAPManagement.svg)](https://jitpack.io/#ofekgki/IAPManagement)
 
@@ -50,7 +50,7 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 |---|---|---|---|
 | **Android SDK** | [`iap-sdk/`](iap-sdk) | Kotlin, Android Views, Coroutines, Gson | Drop-in client library: catalog, purchase popup, restore, entitlement checks, analytics. |
 | **Demo app** | [`app/`](app) | Kotlin, Jetpack Compose, Material 3 | Reference app driving the SDK end-to-end (Store, Entitlements, Restore, Premium gate). |
-| **Backend** | [`backend/`](backend) | Java 17, Spring Boot 3.3, Spring Data JPA, H2 / PostgreSQL | Source of truth: apps, keys, items, purchases, entitlements, analytics. Serves SDK + portal + internal APIs. |
+| **Backend** | [`backend/`](backend) | Java 17, Spring Boot 3.3, Spring Data JPA, PostgreSQL | Source of truth: apps, keys, items, purchases, entitlements, analytics. Serves SDK + portal + internal APIs. |
 | **Developer portal** | [`portal-web/`](portal-web) | React 18, TypeScript, Vite, TanStack Query, Tailwind, Recharts | Dashboard to manage apps/keys/items and view revenue & analytics. |
 | **Shared** | [`shared/`](shared) | TypeScript | Cross-project enums + the response envelope contract. |
 
@@ -137,7 +137,7 @@ flowchart LR
         services --> jpa
     end
 
-    db[("PostgreSQL / H2")]
+    db[("PostgreSQL")]
 
     sdk -- "HTTPS · JSON" --> sdkApi
     portal -- "HTTPS · JSON" --> portalApi
@@ -311,25 +311,24 @@ stateDiagram-v2
 
 ## Quick start
 
-### Option A — Docker Compose (Postgres + backend + portal)
+### 1. Backend + portal + database (Docker Compose)
+
+The stack runs on **PostgreSQL via Docker** — one command brings up the database, backend, and portal:
+
 ```bash
 cp .env.example .env            # optional for local
 docker compose up --build
-# Portal:  http://localhost:5173   (login: demo@example.com / password123)
-# Backend: http://localhost:8080   (health: /api/v1/health)
+# Postgres: internal to the compose network
+# Backend:  http://localhost:8080   (health: /api/v1/health)
+# Portal:   http://localhost:5173   (login: demo@example.com / password123)
 ```
 
-### Option B — run components directly
+### 2. Demo app (Android)
+
 ```bash
-# Backend (in-memory H2 + demo seed)
-cd backend && mvn spring-boot:run
-
-# Portal (Vite dev server)
-cd portal-web && cp .env.example .env && npm install && npm run dev   # http://localhost:5173
-
-# Demo app: open the repo in Android Studio and run the `app` module on an emulator.
-# It targets http://10.0.2.2:8080 (emulator -> host). For a device, set
-# DemoConfig.BACKEND_SDK_BASE_URL to your LAN IP.
+# Open the repo in Android Studio and run the `app` module on an emulator.
+# It targets http://10.0.2.2:8080 (emulator -> host, i.e. the Dockerized backend).
+# For a physical device, set DemoConfig.BACKEND_SDK_BASE_URL to your LAN IP.
 ```
 
 **Seeded demo:** user `demo@example.com` / `password123`, app `app_demo`, API key `demo_api_key_123`,
@@ -554,7 +553,7 @@ Key columns worth knowing (`purchase` table):
 |---|---|
 | **Android SDK** | Kotlin · Android View system · Kotlin Coroutines · Material Components · Gson · `HttpURLConnection` · ContentProvider auto-init |
 | **Demo app** | Kotlin · Jetpack Compose · Material 3 |
-| **Backend** | Java 17 · Spring Boot 3.3 · Spring Web · Spring Data JPA / Hibernate · Spring Security (JWT) · H2 (dev) · PostgreSQL (prod) |
+| **Backend** | Java 17 · Spring Boot 3.3 · Spring Web · Spring Data JPA / Hibernate · Spring Security (JWT) · PostgreSQL (via Docker) |
 | **Developer portal** | React 18 · TypeScript · Vite · React Router · TanStack Query · Axios · Tailwind CSS · Recharts |
 | **Shared** | TypeScript (cross-project enums + response envelope) |
 | **Build & tooling** | Gradle (AGP 9, built-in Kotlin) · Maven · JitPack · Docker Compose |

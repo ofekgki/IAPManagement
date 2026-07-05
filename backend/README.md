@@ -25,7 +25,7 @@ controlled by Google Play Billing.
 
 ## 1. Server overview
 
-- **Stack:** Java 17, Spring Boot 3.3 (Web, Data JPA, Validation), H2 (in-memory for dev).
+- **Stack:** Java 17, Spring Boot 3.3 (Web, Data JPA, Validation), PostgreSQL (run via Docker Compose).
 - **Base path:** `/api/v1`. SDK endpoints under `/api/v1/sdk`, internal/admin under `/api/v1/internal`.
 - **Architecture:** thin controllers → services (business logic) → repositories (JPA). DTOs (records)
   are the only thing exposed over HTTP; entities never leak out.
@@ -219,22 +219,22 @@ for internal endpoints). Each maps to a fixed HTTP status in `ErrorCode`.
 
 ---
 
-## 9. Local development setup
+## 9. Running the backend
 
-Requirements: JDK 17+ and Maven (or an IDE with Spring Boot support) plus internet access for
-dependencies.
+The backend runs on **PostgreSQL via Docker Compose**. From the repo root:
 
 ```bash
-cd backend
-mvn spring-boot:run          # starts on http://localhost:8080 with the dev profile
+docker compose up --build     # Postgres + backend (:8080) + portal (:5173)
 ```
 
-The `dev` profile (active by default in `application.yml`) enables the H2 console at `/h2-console`
-and demo seed data. Configure the internal admin token via `INTERNAL_ADMIN_TOKEN` (dev default:
-`dev_internal_admin_token`).
+This activates the `docker` profile (`application-docker.yml`), which points Hibernate at the
+Postgres container and enables the demo seed data. Override secrets/config through the environment
+(`DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD`, `INTERNAL_ADMIN_TOKEN`, `JWT_SECRET`,
+`API_KEY_PEPPER`, `SEED_*`).
 
 > This is a standalone Spring Boot project and is intentionally **not** part of the Android Gradle
-> build (different toolchains). Build it with Maven/your IDE, not with the project's `gradlew`.
+> build (different toolchains). It is built and run via Docker (Maven inside the image), not with the
+> project's `gradlew`.
 
 ---
 

@@ -6,7 +6,7 @@ methods* (Spring generates the SQL from the method name). This document lists ev
 method, what it does, and the SQL Hibernate generates for it.
 
 - **ORM:** Spring Data JPA (Hibernate 6)
-- **Dialects:** H2 (dev profile) · PostgreSQL (docker profile). Column/table names below use the
+- **Database:** PostgreSQL (run via Docker Compose). Column/table names below use the
   physical names Hibernate derives from the entity fields (camelCase → the same identifier, quoted).
 - **Schema management:** `spring.jpa.hibernate.ddl-auto: update` (tables are created/updated from the
   entities; see each `@Entity`).

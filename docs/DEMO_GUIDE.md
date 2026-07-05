@@ -164,10 +164,8 @@ delete-everything button. Portal user accounts are **kept** so you stay logged i
 
 **B) Full restart of the stack:**
 ```bash
-# Docker: drop the Postgres volume and rebuild
+# Drop the Postgres volume and rebuild — the database is recreated and reseeded
 docker compose down -v && docker compose up --build
-# H2 (backend only): just restart — the in-memory DB is recreated and reseeded
-cd backend && mvn spring-boot:run
 ```
 
 > **Docker gotchas (important):**
@@ -191,10 +189,9 @@ cd backend && mvn spring-boot:run
 
 ## 6. How to run the full demo
 
-1. **Start the backend** (seeds automatically):
+1. **Start the stack** (seeds automatically):
    ```bash
-   cd backend && mvn spring-boot:run        # H2 + dev seed
-   # or: docker compose up --build          # Postgres + portal + backend
+   docker compose up --build                # Postgres + backend + portal
    ```
 2. **Open the portal** at <http://localhost:5173>, log in `demo@example.com` / `password123`, open
    **Demo Game** → check **Analytics / Revenue** (charts from Jan 2026 → today).

@@ -8,7 +8,7 @@
 
 - **Portal ↔ Backend**: fully wired over HTTP. The React portal calls the Spring Boot backend's
   `/api/v1/portal/**` endpoints with a JWT. This works end to end.
-- **Backend ↔ Database**: fully wired (JPA → H2 in dev, PostgreSQL in Docker).
+- **Backend ↔ Database**: fully wired (JPA → PostgreSQL, run via Docker Compose).
 - **Android SDK ↔ Backend**: **now wired over HTTP.** The Kotlin SDK's `ApiClient` was rewritten from
   an in-memory mock into a **real HTTP client** (JDK `HttpURLConnection` + Gson, no extra
   dependency) that calls the backend's `/api/v1/sdk/**` endpoints with the `X-SDK-API-Key` header and
@@ -164,7 +164,7 @@ modes:
                                  │ JPA / SQL
                                  ▼
                     ┌──────────────────────────┐
-                    │  DATABASE (H2 / Postgres)│
+                    │  DATABASE (PostgreSQL)   │
                     │  8 tables (see §3)       │
                     └──────────────────────────┘
 
@@ -659,8 +659,8 @@ deliberately does **not** use Spring Security — hand-rolled filters are easier
   aren't stuck on stale data. Also exposes a public `reset(boolean reseed)` that wipes all
   transactional data and optionally regenerates — used by the portal's "danger zone" (see §7).
   **Never runs in production.**
-- **`application.yml`** (default), **`application-dev.yml`** (H2 + seed), **`application-docker.yml`**
-  (Postgres). See §11.
+- **`application.yml`** (base defaults), **`application-dev.yml`** (local/test fallback), and
+  **`application-docker.yml`** (PostgreSQL — the profile the stack runs on). See §11.
 
 ---
 
@@ -1073,8 +1073,9 @@ year-to-date is visible without picking dates. Revenue is **net of restores** an
 
 ### Backend (`backend/src/main/resources/`)
 
-- **`application.yml`** (default): app name; default profile `dev`; H2 datasource; JPA `ddl-auto:
-  update`; Jackson (ISO dates, keep nulls); and an `app:` block:
+- **`application.yml`** (base): app name; default profile `dev`; a **fallback H2 datasource** (used
+  by the test suite and when booting outside Docker — the running stack overrides it with PostgreSQL
+  via the `docker` profile); JPA `ddl-auto: update`; Jackson (ISO dates, keep nulls); and an `app:` block:
   - `app.internal-admin-token` ← `INTERNAL_ADMIN_TOKEN` (blank → internal endpoints fail closed).
     **TODO:** move to a secret manager.
   - `app.mock-subscription-days: 30` (MOCK subscription demo expiry).
@@ -1117,7 +1118,7 @@ real secrets.
 
 ## 12. How to Run the Project
 
-### Everything via Docker Compose (easiest)
+### Run the stack (Docker Compose + PostgreSQL)
 ```bash
 cp .env.example .env            # optional locally
 docker compose up --build
@@ -1125,13 +1126,8 @@ docker compose up --build
 # Backend: http://localhost:8080   (health: /api/v1/health)
 # Postgres: localhost:5432
 ```
-Backend uses the `docker` profile (Postgres) and seeds demo data. Watch it come up:
+The backend runs the `docker` profile (PostgreSQL) and seeds demo data. Watch it come up:
 `docker compose logs -f backend` → look for `Started PurchaseBackendApplication` and the seed line.
-
-### Backend only (H2, no Docker)
-```bash
-cd backend && mvn spring-boot:run     # dev profile: in-memory H2 + seed
-```
 
 ### Portal only
 ```bash
@@ -1161,10 +1157,9 @@ curl -s "localhost:8080/api/v1/sdk/entitlements/check?userId=user_1&itemId=remov
 ```
 
 ### Resetting the database
-- **From the portal (any DB):** *Settings → Danger zone* → **Reset & regenerate demo data** (or
+- **From the portal:** *Settings → Danger zone* → **Reset & regenerate demo data** (or
   **Delete all data**). Calls `POST /api/v1/portal/maintenance/reset-demo-data` (dev/demo only).
-- **H2 (dev):** in-memory — just restart the backend.
-- **Postgres (docker):** `docker compose down -v && docker compose up --build` (the `-v` drops the
+- **Full wipe (Postgres):** `docker compose down -v && docker compose up --build` (the `-v` drops the
   `pgdata` volume, so the seed runs fresh).
 
 ---
@@ -1182,7 +1177,7 @@ curl -s "localhost:8080/api/v1/sdk/entitlements/check?userId=user_1&itemId=remov
 - `JwtService`: `verify(issue(...))` returns claims; a tampered token → null; an expired token → null.
 - `BillingModes.parseOrNull`: `"MOCK"`→enum, `""`→null, `"x"`→`ApiException(BILLING_MODE_NOT_SUPPORTED)`.
 
-### Integration tests (`@SpringBootTest` + MockMvc, H2)
+### Integration tests (`@SpringBootTest` + MockMvc, in-memory H2 for speed)
 - Register → login → create app → create key → create item → `/sdk/...` start+confirm → entitlement
   exists. (The full happy path.)
 - `confirm` twice with the same `Idempotency-Key` → identical response, **one** entitlement.
@@ -1467,7 +1462,7 @@ above give the deeper "why"; this is the exhaustive checklist.
   optional re-seed). `@ConditionalOnProperty app.seed.enabled` ⇒ absent in production (fail-safe).
 
 ### A.2 Backend — resources (`backend/src/main/resources/`)
-- **`application.yml`** — default config: H2, JPA, Jackson, `app.*` (admin token, mock-sub-days,
+- **`application.yml`** — base config: fallback H2 datasource (Docker overrides with PostgreSQL), JPA, Jackson, `app.*` (admin token, mock-sub-days,
   jwt-secret, api-key-pepper, portal-frontend-url). *(TODOs: real secrets.)*
 - **`application-dev.yml`** — dev profile: H2 console, seed on, **insecure dev defaults**.
 - **`application-docker.yml`** — docker profile: Postgres datasource + seed toggles.
