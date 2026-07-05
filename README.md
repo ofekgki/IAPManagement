@@ -13,6 +13,8 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 ![React](https://img.shields.io/badge/Portal-React%20%2B%20Vite%20%2B%20TS-2563EB?logo=react&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/DB-PostgreSQL%20%2F%20H2-4169E1?logo=postgresql&logoColor=white)
 ![License](https://img.shields.io/badge/License-Educational-64748B)
+[![jitPack](https://jitpack.io/v/ofekgki/IAPManagement.svg)](https://jitpack.io/#ofekgki/IAPManagement)
+
 
 **Documentation site** — ([docs/index.html](https://ofekgki.github.io/IAPManagement/index.html)), served via GitHub Pages.
 
