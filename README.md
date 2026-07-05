@@ -18,7 +18,7 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 [![jitPack](https://jitpack.io/v/ofekgki/IAPManagement.svg)](https://jitpack.io/#ofekgki/IAPManagement)
 
 
-**Documentation site** — ([docs/index.html](https://ofekgki.github.io/IAPManagement/index.html)), served via GitHub Pages.
+**Documentation site** — ([docs/index.html](https://ofekgki.github.io/IAPManagement)), served via GitHub Pages.
 
 </div>
 
