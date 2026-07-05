@@ -345,8 +345,6 @@ Portal -> **Settings -> Danger zone**.
 
 ### Install (JitPack)
 
-[![JitPack](https://jitpack.io/v/ofekgki/IAPManagement.svg)](https://jitpack.io/#ofekgki/IAPManagement)
-
 **1. Add the JitPack repository** to `settings.gradle.kts` (or your root `build.gradle`):
 
 ```kotlin
