@@ -359,7 +359,7 @@ dependencyResolutionManagement {
 ```kotlin
 // app/build.gradle.kts
 	dependencies {
-	        implementation 'com.github.ofekgki:IAPManagement:1.0.1'
+	        implementation 'com.github.ofekgki:IAPManagement:1.0.2'
 	}
 ```
 
