@@ -246,7 +246,7 @@ erDiagram
 | `api_key.status` | `ACTIVE` · `REVOKED` |
 | `purchase_item.type` | `LIFETIME` · `CONSUMABLE` · `SUBSCRIPTION` |
 | `purchase.status` | `CREATED` · `PENDING` · `SUCCESS` · `FAILED` · `CANCELLED` · `REQUIRES_VERIFICATION` · `RESTORED` |
-| `purchase.payment_method` | `APPLE_PAY` · `GOOGLE_PLAY` · `PAYPAL` · `CREDIT_CARD` |
+| `purchase.payment_method` | `APPLE_PAY` · `GOOGLE_PAY` · `PAYPAL` · `CREDIT_CARD` |
 | `entitlement.status` | `ACTIVE` · `EXPIRED` · `REVOKED` |
 
 > Relationships are enforced in the service layer via app-scoped string IDs (`item_id`,
