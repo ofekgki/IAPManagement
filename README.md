@@ -94,8 +94,6 @@ charges), with a **Google Play** path scaffolded and failing safe until configur
 
 ## Screenshots & video
 
-> Assets live in [`docs/media/`](docs/media) — see that folder's README for the expected file names.
-> Placeholders below resolve once you add the images.
 
 ### Developer portal
 | Dashboard | Revenue | Purchases |
